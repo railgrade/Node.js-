@@ -189,4 +189,79 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "concurrent-queue"
 version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c278839b831783b70278b14df4d45e1beb1aad306c07bb796637de9a0e323e8e"
+dependencies = [
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "console"
+version = "0.15.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3d79fbe8970a77e3e34151cc13d3b3e248aa0faaecb9f6091fa07ebefe5ad60"
+dependencies = [
+ "encode_unicode",
+ "lazy_static",
+ "libc",
+ "windows-sys 0.42.0",
+]
+
+[[package]]
+name = "convert_case"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
+
+[[package]]
+name = "crossbeam-channel"
+version = "0.5.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf2b3e8478797446514c91ef04bafcb59faba183e621ad488df88983cc14128c"
+dependencies = [
+ "cfg-if",
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-utils"
+version = "0.8.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c063cd8cc95f5c377ed0d4b49a4b21f632396ff690e8470c29b3359b346984b"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
+name = "crux_core"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "assert_matches",
+ "async-channel",
+ "bcs",
+ "crossbeam-channel",
+ "crux_macros",
+ "derive_more",
+ "futures",
+ "rand 0.8.5",
+ "serde",
+ "serde-generate",
+ "serde-reflection",
+ "serde_json",
+ "static_assertions",
+ "thiserror",
+ "uuid",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "crux_http"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "assert_matches",
+ "async-trait",
+ "bcs",
+ "crux_core",
+ "cru

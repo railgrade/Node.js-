@@ -88,4 +88,27 @@ The Foreign Function Interface allowing the shell to call the above functions is
 
 In order to both send more complex data than UniFFI currently supports, and enforce the message passing semantics, all messages are serialized, sent across the boundary, then deserialized using [serde-generate](https://docs.rs/serde-generate/latest/serde_generate/) which also provides type generation for the foreign (non-Rust) languages.
 
-This means that changes to types in the core, especially the `Event` and `Request` types, propagat
+This means that changes to types in the core, especially the `Event` and `Request` types, propagate out into the shell implementations and cause type errors where appropriate (such as an exhaustive match on an enum check).
+
+### Message Types
+
+Three types of message are exchanged between the application and the core.
+
+- Messages of type `Event` are sent from the Shell to the Core in response to an event happening in the user interface (the _driving_ side).
+  They start a potential sequence of further message exchanges between the shell and the core.
+  Messages are passed on unchanged.
+- Messages of type `Request` are sent from the Core to the Shell to request the execution of some side-effect-inducing task.
+  The Core responds with zero or more `Request` messages after receiving an `Event` message (the _driven_ side).
+- Response messages are sent from the Shell to the Core carrying the result of an earlier request.
+
+`Request` messages contain the inputs for the requested side-effect, along with a `uuid` used by the core to pair requests and their responses together.
+The exact mechanics are not important, but it is important for the request's `uuid` to be passed on to the corresponding response.
+
+## Typical Message Exchange Cycle
+
+A typical message exchange cycle may look like this:
+
+1. User interaction occurs in the Shell, which results in an event
+1. The Shell handles this event by constructing an `Event`
+1. The Shell calls the Core's `process_event` function passing the `Event` as an argument
+1. The Core performs the required proces

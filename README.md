@@ -40,4 +40,32 @@ All it can do is perform pure calculations and keep internal state.
 
 Following the Elm architecture, the core defines the key component types within the application:
 
-- `Event` — an `enum` describing the events which the core can ha
+- `Event` — an `enum` describing the events which the core can handle
+- `Model` — describes the internal state of the application
+- `ViewModel` — represents information that should be displayed to the user
+
+The former two are tied together by the `update` function, familiar from Elm, Redux or other event sourcing architectures, which currently has this type signature:
+
+```rust
+fn update(
+    &self,
+    event: Event,
+    model: &mut Model,
+    capabilities: &Capabilities,
+)
+```
+
+The job of the `update` function is to process an `Event`, update the model accordingly, and potentially request some side-effects using capabilities.
+
+### Application Shell
+
+The enclosing platform native "Shell" is written using the language appropriate for the platform, and acts as the runtime environment within which all the non-pure tasks are performed.
+From the perspective of the core, the shell is the platform on which the core runs.
+
+## Communication Between the Application Shell and the Core
+
+Following the Elm architecture, the interface with the core is message based.
+This means that the core is unable to perform anything other than pure calculations.
+To perform any task that creates a side-effect (such as an HTTP call or random number generation), the core must request it from the shell.
+
+The core has a concept of Capabilities — reusable interfaces for common side-effects with request/response semantics. There are already a few embryonic Capability crates ([Http](./crux_http/), [KeyValue](./crux_kv/), [Time](./crux_time/), [Platform](./crux_platform/), and the builtin [Render](./crux_core//src//render.rs)) — and you can w

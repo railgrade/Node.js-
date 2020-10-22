@@ -149,4 +149,16 @@ Crux is kindly sponsored by the following organizations. Your help is very much 
 ### Red Badger Consulting Limited
 <img src="./docs/src/images/RB_Screen_Logos_Artwork-02.svg" alt="Red Badger logo" height="40px"/>
 
-[Red Badger](https
+[Red Badger](https://red-badger.com/) is the digital product consultancy trusted by blue chips and global brands. Our product design and technical pedigree allow us to craft high-impact digital products customers want. We use modern engineering approaches to deliver sustainable change. And embed digital capabilities to power continuous innovation.
+
+---
+
+### Zulip
+
+<img src="./docs/src/images/zulip-icon-circle.svg" alt="Zulip round icon" height="40px"/>
+
+[Zulip](https://zulip.com/) is an open-source modern team chat app designed to keep both live and asynchronous conversations organized.
+
+Zulip sponsor Crux by providing our [Zulip server](https://crux-community.zulipchat.com) — thank you Zulip!
+
+---

@@ -111,4 +111,42 @@ A typical message exchange cycle may look like this:
 1. User interaction occurs in the Shell, which results in an event
 1. The Shell handles this event by constructing an `Event`
 1. The Shell calls the Core's `process_event` function passing the `Event` as an argument
-1. The Core performs the required proces
+1. The Core performs the required processing, updating both its inner state and the view model
+1. The Core returns one or more `Request` messages to the Shell
+
+In the simplest case, the Core will respond to an `Event` by returning the single `Request` - render.
+
+This requests that the Shell re-renders the user interface.
+When `Render` is the only response from the Core, the message cycle has completed and the Core has now "settled".
+
+In more complex cases however, the Core may well return multiple `Request`s; each of which instructs the Shell to perform a side-effect-inducing task such as:
+
+- Make a network call, or
+- Fetch the current date/time stamp, or
+- Perform biometric authentication, or
+- Obtain an image from the camera, or
+- Whatever else you can think of...
+
+Many of these side-effecting-inducing tasks are asynchronous.
+The Shell is responsible for passing responses back to the core (to the `handle_response` function), which may respond with further requests.
+
+This exchange continues until the core stops requesting further side-effects (typically the last side-effect requested would be `Render`).
+
+## Run the Counter Example locally
+
+Refer to [examples/counter](./examples/counter/README.md) README
+
+## How to Start Your Own New Project
+
+Refer to the [Getting Started](https://redbadger.github.io/crux/getting_started/core.html) section of the tutorials.
+
+---
+## Sponsors
+
+Crux is kindly sponsored by the following organizations. Your help is very much appreciated.
+
+---
+### Red Badger Consulting Limited
+<img src="./docs/src/images/RB_Screen_Logos_Artwork-02.svg" alt="Red Badger logo" height="40px"/>
+
+[Red Badger](https

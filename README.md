@@ -68,4 +68,24 @@ Following the Elm architecture, the interface with the core is message based.
 This means that the core is unable to perform anything other than pure calculations.
 To perform any task that creates a side-effect (such as an HTTP call or random number generation), the core must request it from the shell.
 
-The core has a concept of Capabilities — reusable interfaces for common side-effects with request/response semantics. There are already a few embryonic Capability crates ([Http](./crux_http/), [KeyValue](./crux_kv/), [Time](./crux_time/), [Platform](./crux_platform/), and the builtin [Render](./crux_core//src//render.rs)) — and you can w
+The core has a concept of Capabilities — reusable interfaces for common side-effects with request/response semantics. There are already a few embryonic Capability crates ([Http](./crux_http/), [KeyValue](./crux_kv/), [Time](./crux_time/), [Platform](./crux_platform/), and the builtin [Render](./crux_core//src//render.rs)) — and you can write your own if you need/want to.
+
+![crux](./docs/src/crux.png)
+
+This means the core interface is simple:
+
+- `process_event: Event -> Vec<Request>` - processes a user interaction event and potentially responds with capability requests. This is the API for the _driving_ side in the above diagram.
+- `handle_response: (uuid, SomeResponse) -> Vec<Request>` - handles the response from the capability and potentially follows up with further requests. This is the API for the _driven_ side in the above diagram.
+- `view: () -> ViewModel` - provides the shell with the current data for displaying user interface
+
+Updating the user interface is considered a side-effect and is provided by the built-in `Render` capability.
+
+This design means the core can be tested very easily, without any mocking and stubbing, by simply checking the Input/Output behaviour of the three functions.
+
+### Foreign Function Interface
+
+The Foreign Function Interface allowing the shell to call the above functions is provided by Mozilla's [UniFFI](https://mozilla.github.io/uniffi-rs/) on a mobile device, or in the browser, by [wasm-pack](https://rustwasm.github.io/wasm-pack/).
+
+In order to both send more complex data than UniFFI currently supports, and enforce the message passing semantics, all messages are serialized, sent across the boundary, then deserialized using [serde-generate](https://docs.rs/serde-generate/latest/serde_generate/) which also provides type generation for the foreign (non-Rust) languages.
+
+This means that changes to types in the core, especially the `Event` and `Request` types, propagat

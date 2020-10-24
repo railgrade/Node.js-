@@ -32,4 +32,33 @@ In the above diagram, the inner "Core" is compiled and linked to the outer "Shel
 
 - On iOS as a native static library
 - On Android as a dynamic library using [Java Native Access](https://github.com/java-native-access/jna)
-- In
+- In a browser as a WebAssembly module
+
+In fact, because WebAssembly (Wasm) is one of the compilation targets, the core _must_ remain side-effect free, due to the sandboxed nature of the Wasm runtime environment.
+
+As such, the core is completely isolated and secure against software supply-chain attacks, as it has no access to any external APIs.
+All it can do is perform pure calculations and keep internal state.
+
+Following the Elm architecture, the core defines the key component types within the application:
+
+- `Event` — an `enum` describing the events which the core can handle
+- `Model` — describes the internal state of the application
+- `ViewModel` — represents information that should be displayed to the user
+
+The former two are tied together by the `update` function, familiar from Elm, Redux or other event sourcing architectures, which currently has this type signature:
+
+```rust
+fn update(
+    &self,
+    event: Event,
+    model: &mut Model,
+    capabilities: &Capabilities,
+)
+```
+
+The job of the `update` function is to process an `Event`, update the model accordingly, and potentially request some side-effects using capabilities.
+
+### Application Shell
+
+The enclosing "Platform native shell" is written using the language appropriate for the platform, and acts as the runtime environment within which all the non-pure tasks are performed.
+From the perspective of the core, the shell is the platform on which the core runs.

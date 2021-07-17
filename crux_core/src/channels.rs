@@ -46,4 +46,83 @@ impl<T> Receiver<T> {
         match self.inner.try_recv() {
             Ok(inner) => Ok(Some(inner)),
             Err(crossbeam_channel::TryRecvError::Empty) => Ok(None),
-            Err(c
+            Err(crossbeam_channel::TryRecvError::Disconnected) => Err(()),
+        }
+    }
+
+    pub fn drain(&self) -> Drain<T> {
+        Drain { receiver: self }
+    }
+}
+
+pub struct Drain<'a, T> {
+    receiver: &'a Receiver<T>,
+}
+
+impl<'a, T> Iterator for Drain<'a, T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.receiver.receive()
+    }
+}
+
+pub struct Sender<T> {
+    inner: Arc<dyn SenderInner<T> + Send + Sync>,
+}
+
+impl<T> Clone for Sender<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
+    }
+}
+
+impl<T> Sender<T>
+where
+    T: 'static,
+{
+    pub fn send(&self, t: T) {
+        self.inner.send(t)
+    }
+
+    pub fn map_input<NewT, F>(&self, func: F) -> Sender<NewT>
+    where
+        F: Fn(NewT) -> T + Send + Sync + 'static,
+    {
+        Sender {
+            inner: Arc::new(MappedInner {
+                sender: Arc::clone(&self.inner),
+                func,
+            }),
+        }
+    }
+}
+
+impl<NewEf> Sender<crate::Step<NewEf>>
+where
+    NewEf: 'static,
+{
+    pub fn map_effect<Ef, F>(&self, func: F) -> Sender<crate::Step<Ef>>
+    where
+        F: Fn(Ef) -> NewEf + Sync + Send + Copy + 'static,
+        Ef: 'static,
+    {
+        self.map_input::<crate::Step<_>, _>(move |step| step.map_effect(func))
+    }
+}
+
+trait SenderInner<T> {
+    fn send(&self, t: T);
+}
+
+impl<T> SenderInner<T> for crossbeam_channel::Sender<T> {
+    fn send(&self, t: T) {
+        crossbeam_channel::Sender::send(self, t).unwrap()
+    }
+}
+
+pub struct MappedInner<T, F> {
+    sender: Arc<dyn SenderInner<T> + Send + Sync>,
+    func: F

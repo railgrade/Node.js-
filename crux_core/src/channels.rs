@@ -125,4 +125,37 @@ impl<T> SenderInner<T> for crossbeam_channel::Sender<T> {
 
 pub struct MappedInner<T, F> {
     sender: Arc<dyn SenderInner<T> + Send + Sync>,
-    func: F
+    func: F,
+}
+
+impl<F, T, U> SenderInner<U> for MappedInner<T, F>
+where
+    F: Fn(U) -> T,
+{
+    fn send(&self, value: U) {
+        self.sender.send((self.func)(value))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use static_assertions::assert_impl_all;
+
+    use super::*;
+
+    assert_impl_all!(Sender<i32>: Send);
+
+    #[test]
+    fn test_channels() {
+        let (send, recv) = channel();
+
+        send.send(Some(1));
+        assert_eq!(recv.receive(), Some(Some(1)));
+
+        let wrapped_send = send.map_input(Some);
+        wrapped_send.send(1);
+        assert_eq!(recv.receive(), Some(Some(1)));
+
+        assert_eq!(recv.receive(), None);
+    }
+}

@@ -68,4 +68,55 @@ where
 
         let step = Step::resolves_once(operation, move |bytes| {
             let Some(shared_state) = callback_shared_state.upgrade() else {
-               
+                // The ShellRequest was dropped before we were called, so just
+                // do nothing.
+                return;
+            };
+
+            let mut shared_state = shared_state.lock().unwrap();
+            shared_state.result = Some(bcs::from_bytes(bytes).unwrap());
+            if let Some(waker) = shared_state.waker.take() {
+                waker.wake()
+            }
+        });
+
+        let send_step_context = self.clone();
+        let send_step = move || send_step_context.send_step(step);
+
+        shared_state.lock().unwrap().send_step = Some(Box::new(send_step));
+
+        ShellRequest { shared_state }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use assert_matches::assert_matches;
+
+    use crate::{
+        capability::{CapabilityContext, Operation},
+        channels::channel,
+        executor::executor_and_spawner,
+        steps::Resolve,
+    };
+
+    #[derive(serde::Serialize, PartialEq, Eq, Debug)]
+    struct TestOperation;
+
+    impl Operation for TestOperation {
+        type Output = ();
+    }
+
+    #[test]
+    fn test_effect_future() {
+        let (step_sender, steps) = channel();
+        let (event_sender, events) = channel::<()>();
+        let (executor, spawner) = executor_and_spawner();
+        let capability_context =
+            CapabilityContext::new(step_sender, event_sender.clone(), spawner.clone());
+
+        let future = capability_context.request_from_shell(TestOperation);
+
+        // The future hasn't been awaited so we shouldn't have any steps.
+        assert_matches!(steps.receive(), None);
+        assert_matches

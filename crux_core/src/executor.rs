@@ -39,4 +39,33 @@ impl Spawner {
             task_sender: self.task_sender.clone(),
         });
 
-        self.task_s
+        self.task_sender
+            .send(task)
+            .expect("to be able to send tasks on an unbounded queue")
+    }
+}
+
+impl ArcWake for Task {
+    fn wake_by_ref(arc_self: &Arc<Self>) {
+        let cloned = arc_self.clone();
+        arc_self
+            .task_sender
+            .send(cloned)
+            .expect("to be able to send tasks on an unbounded queue")
+    }
+}
+
+impl QueuingExecutor {
+    pub fn run_all(&self) {
+        while let Ok(task) = self.ready_queue.try_recv() {
+            let mut future_slot = task.future.lock().unwrap();
+            if let Some(mut future) = future_slot.take() {
+                let waker = waker_ref(&task);
+                let context = &mut Context::from_waker(&waker);
+                if future.as_mut().poll(context).is_pending() {
+                    *future_slot = Some(future)
+                }
+            }
+        }
+    }
+}

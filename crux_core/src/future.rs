@@ -119,4 +119,37 @@ mod tests {
 
         // The future hasn't been awaited so we shouldn't have any steps.
         assert_matches!(steps.receive(), None);
-        assert_matches
+        assert_matches!(events.receive(), None);
+
+        // It also shouldn't have spawned anything so check that
+        executor.run_all();
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), None);
+
+        spawner.spawn(async move {
+            future.await;
+            event_sender.send(());
+        });
+
+        // We still shouldn't have any steps
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), None);
+
+        executor.run_all();
+        let step = steps.receive().expect("we should have a step here");
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), None);
+
+        let Some(Resolve::Once(resolve)) = step.resolve else {
+            panic!("Expected a resolve once");
+        };
+        resolve(&[]);
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), None);
+
+        executor.run_all();
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), Some(()));
+        assert_matches!(events.receive(), None);
+    }
+}

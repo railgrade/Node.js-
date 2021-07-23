@@ -41,4 +41,63 @@
 //! ```rust,ignore
 //! // src/app.rs
 //!
-//! use serde::{Serialize, Deserialize}
+//! use serde::{Serialize, Deserialize};
+//! use crux_core::{App, render::Render};
+//!
+//! // Model describing the application state
+//! #[derive(Default)]
+//! struct Model {
+//!     count: isize,
+//! }
+//!
+//! // Event describing the actions that can be taken
+//! #[derive(Serialize, Deserialize)]
+//! enum Event {
+//!     Increment,
+//!     Decrement,
+//!     Reset,
+//! }
+//!
+//! // Capabilities listing the side effects the Core
+//! // will use to request side effects from the Shell
+//! #[derive(Effect)]
+//! pub struct Capabilities {
+//!     pub render: Render<Event>
+//! }
+//!
+//! impl App for Hello {
+//!     // Use the above Event
+//!     type Event = Event;
+//!     // Use the above Model
+//!     type Model = Model;
+//!     type ViewModel = String;
+//!     // Use the above Capabilities
+//!     type Capabilities = Capabilities;
+//!
+//!     fn update(&self, event: Event, model: &mut Model, caps: &Capabilities) {
+//!         match event {
+//!             Event::Increment => model.count += 1,
+//!             Event::Decrement => model.count -= 1,
+//!             Event::Reset => model.count = 0,
+//!         };
+//!
+//!         // Request a UI update
+//!         caps.render.render()
+//!     }
+//!
+//!     fn view(&self, model: &Model) -> self::ViewModel {
+//!         format!("Count is: {}", model.count)
+//!     }
+//! }
+//! ```
+//!
+//! ## Integrating with a Shell
+//!
+//! To use the application in a user interface shell, you need to expose the core interface for FFI.
+//! This "plumbing" will likely be simplified with macros in the next version of Crux.
+//!
+//! ```rust,ignore
+//! // src/lib.rs
+//! pub mod app;
+//!
+//! use la

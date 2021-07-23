@@ -100,4 +100,76 @@
 //! // src/lib.rs
 //! pub mod app;
 //!
-//! use la
+//! use lazy_static::lazy_static;
+//! use wasm_bindgen::prelude::wasm_bindgen;
+//!
+//! pub use crux_core::Request;
+//! use crux_core::Core;
+//!
+//! pub use app::*;
+//!
+//! uniffi_macros::include_scaffolding!("hello");
+//!
+//! lazy_static! {
+//!     static ref CORE: Core<Effect, App> = Core::new::<Capabilities>();
+//! }
+//!
+//! #[wasm_bindgen]
+//! pub fn process_event(data: &[u8]) -> Vec<u8> {
+//!     CORE.process_event(data)
+//! }
+//!
+//! #[wasm_bindgen]
+//! pub fn handle_response(uuid: &[u8], data: &[u8]) -> Vec<u8> {
+//!     CORE.handle_response(uuid, data)
+//! }
+//!
+//! #[wasm_bindgen]
+//! pub fn view() -> Vec<u8> {
+//!     CORE.view()
+//! }
+//! ```
+//!
+//! You will also need a `hello.udl` file describing the foreign function interface:
+//!
+//! ```ignore
+//! // src/hello.udl
+//! namespace hello {
+//!   sequence<u8> process_event([ByRef] sequence<u8> msg);
+//!   sequence<u8> handle_response([ByRef] sequence<u8> res);
+//!   sequence<u8> view();
+//! };
+//! ```
+//!
+//! Finally, you will need to set up the type generation for the `Model`, `Message` and `ViewModel` types.
+//! See [typegen] for details.
+//!
+
+pub mod capability;
+mod channels;
+mod executor;
+mod future;
+pub mod render;
+mod steps;
+mod stream;
+pub mod testing;
+#[cfg(feature = "typegen")]
+pub mod typegen;
+
+use std::sync::RwLock;
+
+use serde::{Deserialize, Serialize};
+
+use capability::CapabilityContext;
+use channels::Receiver;
+use executor::QueuingExecutor;
+use steps::{Step, StepRegistry};
+
+pub use self::{
+    capability::{Capability, WithContext},
+    future::ShellRequest,
+    stream::ShellStream,
+};
+
+/// Implement [App] on your type to make it into a Crux app. Use your type implementing [App]
+//

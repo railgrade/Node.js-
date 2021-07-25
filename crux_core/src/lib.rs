@@ -244,4 +244,47 @@ where
             app: Default::default(),
             capabilities: Capabilities::new_with_context(capability_context),
             steps: step_receiver,
-            capability_e
+            capability_events: event_receiver,
+        }
+    }
+
+    /// Receive an event from the shell.
+    ///
+    /// The `event` is serialized and will be deserialized by the core before it's passed
+    /// to your app.
+    pub fn process_event<'de>(&self, event: &'de [u8]) -> Vec<u8>
+    where
+        <A as App>::Event: Deserialize<'de>,
+    {
+        self.process(None, event)
+    }
+
+    /// Receive a response to a capability request from the shell.
+    ///
+    /// The `output` is serialized capability output. It will be deserialized by the core.
+    /// The `uuid` MUST match the `uuid` of the effect that triggered it, else the core will panic.
+    pub fn handle_response<'de>(&self, uuid: &[u8], output: &'de [u8]) -> Vec<u8>
+    where
+        <A as App>::Event: Deserialize<'de>,
+    {
+        self.process(Some(uuid), output)
+    }
+
+    /// Get the current state of the app's view model (serialized).
+    pub fn view(&self) -> Vec<u8> {
+        let value = {
+            let model = self.model.read().expect("Model RwLock was poisoned.");
+            self.app.view(&model)
+        };
+
+        bcs::to_bytes(&value).expect("View model serialization failed.")
+    }
+
+    fn process<'de>(&self, uuid: Option<&[u8]>, data: &'de [u8]) -> Vec<u8>
+    where
+        <A as App>::Event: Deserialize<'de>,
+    {
+        match uuid {
+            None => {
+                let shell_event = bcs::from_bytes(data).expect("Message deserialization failed.");
+                let mut model = self.model.write().expect("Model RwLock

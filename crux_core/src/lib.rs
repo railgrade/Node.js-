@@ -172,4 +172,31 @@ pub use self::{
 };
 
 /// Implement [App] on your type to make it into a Crux app. Use your type implementing [App]
-//
+/// as the type argument to [Core].
+pub trait App: Default {
+    /// Event, typically an `enum`, defines the actions that can be taken to update the application state.
+    type Event: Send + 'static;
+    /// Model, typically a `struct` defines the internal state of the application
+    type Model: Default;
+    /// ViewModel, typically a `struct` describes the user interface that should be
+    /// displayed to the user
+    type ViewModel: Serialize;
+    /// Capabilities, typically a `struct`, lists the capabilities used by this application
+    /// Typically, Capabilities should contain at least an instance of the built-in [`Render`](crate::render::Render) capability.
+    type Capabilities;
+
+    /// Update method defines the transition from one `model` state to another in response to an `event`.
+    ///
+    /// Update function can mutate the `model` and use the capabilities provided by the `caps` argument
+    /// to instruct the shell to perform side-effects. The side-effects will run concurrently (capability
+    /// calls behave the same as go routines in Go or Promises in JavaScript). Capability calls
+    /// don't return anything, but may take a `callback` event which should be dispatched when the
+    /// effect completes.
+    ///
+    /// Typically, `update` should call at least [`Render::render`](crate::render::Render::render).
+    fn update(&self, event: Self::Event, model: &mut Self::Model, caps: &Self::Capabilities);
+
+    /// View method is used by the Shell to request the current state of the user interface
+    fn view(&self, model: &Self::Model) -> Self::ViewModel;
+}
+/// T

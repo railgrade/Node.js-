@@ -199,4 +199,49 @@ pub trait App: Default {
     /// View method is used by the Shell to request the current state of the user interface
     fn view(&self, model: &Self::Model) -> Self::ViewModel;
 }
-/// T
+/// The Crux core. Create an instance of this type with your effect type, and your app type as type parameters
+pub struct Core<Ef, A>
+where
+    A: App,
+{
+    model: RwLock<A::Model>,
+    step_registry: StepRegistry,
+    executor: QueuingExecutor,
+    capabilities: A::Capabilities,
+    steps: Receiver<Step<Ef>>,
+    capability_events: Receiver<A::Event>,
+    app: A,
+}
+
+impl<Ef, A> Core<Ef, A>
+where
+    Ef: Serialize + Send + 'static,
+    A: App,
+{
+    /// Create an instance of the Crux core to start a Crux application, e.g.
+    ///
+    /// ```rust,ignore
+    /// lazy_static! {
+    ///     static ref CORE: Core<HelloEffect, Hello> = Core::new::<HelloCapabilities>();
+    /// }
+    /// ```
+    ///
+    /// The core interface passes across messages serialized as bytes. These can be
+    /// deserialized in the Shell using the types generated using the [typegen] module.
+    pub fn new<Capabilities>() -> Self
+    where
+        Capabilities: WithContext<A, Ef>,
+    {
+        let (step_sender, step_receiver) = crate::channels::channel();
+        let (event_sender, event_receiver) = crate::channels::channel();
+        let (executor, spawner) = executor::executor_and_spawner();
+        let capability_context = CapabilityContext::new(step_sender, event_sender, spawner);
+
+        Self {
+            model: Default::default(),
+            step_registry: Default::default(),
+            executor,
+            app: Default::default(),
+            capabilities: Capabilities::new_with_context(capability_context),
+            steps: step_receiver,
+            capability_e

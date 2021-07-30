@@ -287,4 +287,50 @@ where
         match uuid {
             None => {
                 let shell_event = bcs::from_bytes(data).expect("Message deserialization failed.");
-                let mut model = self.model.write().expect("Model RwLock
+                let mut model = self.model.write().expect("Model RwLock was poisoned.");
+                self.app.update(shell_event, &mut model, &self.capabilities);
+            }
+            Some(uuid) => {
+                self.step_registry.resume(uuid, data);
+            }
+        }
+
+        self.executor.run_all();
+
+        while let Some(capability_event) = self.capability_events.receive() {
+            let mut model = self.model.write().expect("Model RwLock was poisoned.");
+            self.app
+                .update(capability_event, &mut model, &self.capabilities);
+            drop(model);
+            self.executor.run_all();
+        }
+
+        let requests = self
+            .steps
+            .drain()
+            .map(|c| self.step_registry.register(c))
+            .collect::<Vec<_>>();
+
+        bcs::to_bytes(&requests).expect("Request serialization failed.")
+    }
+}
+
+impl<Ef, A> Default for Core<Ef, A>
+where
+    Ef: Serialize + Send + 'static,
+    A: App,
+    A::Capabilities: WithContext<A, Ef>,
+{
+    fn default() -> Self {
+        Self::new::<A::Capabilities>()
+    }
+}
+
+/// Request for a side-effect passed from the Core to the Shell. The `uuid` links
+/// the `Request` with the corresponding call to [`Core::response`] to pass the data back
+/// to the [`App::update`] function (wrapped in the event provided to the capability originating the effect).
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Request<Effect> {
+    pub uuid: Vec<u8>,
+    pub effect: Effect,
+}

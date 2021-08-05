@@ -56,4 +56,6 @@ impl<Ev> Capability<Ev> for Render<Ev> {
         Ev: 'static,
         NewEvent: 'static,
     {
-  
+        Render::new(self.context.map_event(f))
+    }
+}

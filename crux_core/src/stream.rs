@@ -147,4 +147,32 @@ mod tests {
         assert_matches!(steps.receive(), None);
         assert_matches!(events.receive(), None);
 
-        let Some(Resolve::Many(resolve)) = step.resolv
+        let Some(Resolve::Many(resolve)) = step.resolve else {
+            panic!("Expected a resolve many");
+        };
+        // Resolve it once
+        resolve(&[0]).unwrap();
+        executor.run_all();
+
+        // We should have one event
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), Some(()));
+        assert_matches!(events.receive(), None);
+
+        // Resolve it a few more times and then finish.
+        resolve(&[0]).unwrap();
+        resolve(&[0]).unwrap();
+        resolve(&[1]).unwrap();
+        executor.run_all();
+
+        // We should have three events
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), Some(()));
+        assert_matches!(events.receive(), Some(()));
+        assert_matches!(events.receive(), Some(()));
+        assert_matches!(events.receive(), None);
+
+        // The next resolve should error as we've terminated the task
+        resolve(&[0]).expect_err("resolving a finished task should error")
+    }
+}

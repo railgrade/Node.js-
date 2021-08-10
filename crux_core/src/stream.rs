@@ -102,4 +102,49 @@ mod tests {
     #[derive(serde::Serialize, PartialEq, Eq, Debug)]
     struct TestOperation;
 
-    impl
+    impl Operation for TestOperation {
+        type Output = Option<Done>;
+    }
+
+    #[derive(serde::Deserialize, PartialEq, Eq, Debug)]
+    struct Done;
+
+    #[test]
+    fn test_shell_stream() {
+        let (step_sender, steps) = channel();
+        let (event_sender, events) = channel::<()>();
+        let (executor, spawner) = executor_and_spawner();
+        let capability_context =
+            CapabilityContext::new(step_sender, event_sender.clone(), spawner.clone());
+
+        let mut stream = capability_context.stream_from_shell(TestOperation);
+
+        // The stream hasn't been polled so we shouldn't have any steps.
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), None);
+
+        // It also shouldn't have spawned anything so check that
+        executor.run_all();
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), None);
+
+        spawner.spawn(async move {
+            use futures::StreamExt;
+            while let Some(maybe_done) = stream.next().await {
+                event_sender.send(());
+                if maybe_done.is_some() {
+                    break;
+                }
+            }
+        });
+
+        // We still shouldn't have any steps
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), None);
+
+        executor.run_all();
+        let step = steps.receive().expect("we should have a step here");
+        assert_matches!(steps.receive(), None);
+        assert_matches!(events.receive(), None);
+
+        let Some(Resolve::Many(resolve)) = step.resolv

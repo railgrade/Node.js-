@@ -132,4 +132,34 @@ impl<Ef, Ev> TestEffect<Ef, Ev> {
     {
         self.context.steps.resume(
             self.request.uuid.as_slice(),
-            &bcs::to_bytes(
+            &bcs::to_bytes(result).unwrap(),
+        );
+        self.context.updates()
+    }
+}
+
+impl<Ef, Ev> AsRef<Ef> for TestEffect<Ef, Ev> {
+    fn as_ref(&self) -> &Ef {
+        &self.request.effect
+    }
+}
+
+impl<Ef, Ev> PartialEq<Ef> for TestEffect<Ef, Ev>
+where
+    Ef: PartialEq,
+{
+    fn eq(&self, other: &Ef) -> bool {
+        self.request.effect == *other
+    }
+}
+
+impl<Ef, Ev> fmt::Debug for TestEffect<Ef, Ev>
+where
+    Ef: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TestEffect")
+            .field("request", &self.request)
+            .finish()
+    }
+}

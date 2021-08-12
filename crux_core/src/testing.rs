@@ -71,4 +71,65 @@ where
         Self {
             app: App::default(),
             capabilities: App::Capabilities::new_with_context(capability_context),
-            context: Rc
+            context: Rc::new(AppContext {
+                commands,
+                events,
+                executor,
+                steps: StepRegistry::default(),
+            }),
+        }
+    }
+}
+
+impl<App, Ef> AsRef<App::Capabilities> for AppTester<App, Ef>
+where
+    App: crate::App,
+{
+    fn as_ref(&self) -> &App::Capabilities {
+        &self.capabilities
+    }
+}
+
+impl<Ef, Ev> AppContext<Ef, Ev> {
+    pub fn updates(self: &Rc<Self>) -> Update<Ef, Ev> {
+        self.executor.run_all();
+        let effects = self
+            .commands
+            .drain()
+            .map(|cmd| {
+                let request = self.steps.register(cmd);
+                TestEffect {
+                    request,
+                    context: Rc::clone(self),
+                }
+            })
+            .collect();
+
+        let events = self.events.drain().collect();
+
+        Update { effects, events }
+    }
+}
+
+/// Update test helper holds the result of running an app update using [`AppTester::update`].
+#[derive(Debug)]
+pub struct Update<Ef, Ev> {
+    /// Effects requested from the update run
+    pub effects: Vec<TestEffect<Ef, Ev>>,
+    /// Events dispatched from the update run
+    pub events: Vec<Ev>,
+}
+
+pub struct TestEffect<Ef, Ev> {
+    request: Request<Ef>,
+    context: Rc<AppContext<Ef, Ev>>,
+}
+
+impl<Ef, Ev> TestEffect<Ef, Ev> {
+    pub fn resolve<T>(&self, result: &T) -> Update<Ef, Ev>
+    where
+        T: serde::ser::Serialize,
+    {
+        self.context.steps.resume(
+            self.request.uuid.as_slice(),
+            &bcs::to_bytes(

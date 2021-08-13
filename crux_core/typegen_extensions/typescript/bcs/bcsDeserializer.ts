@@ -19,4 +19,29 @@ export class BcsDeserializer extends BinaryDeserializer {
       }
       if (digit == x) {
         if (shift > 0 && digit == 0) {
-          throw new Error("Invalid uleb12
+          throw new Error("Invalid uleb128 number (unexpected zero digit)");
+        }
+        return value;
+      }
+    }
+    throw new Error("Overflow while parsing uleb128-encoded uint32 value");
+  }
+
+  deserializeLen(): number {
+    return this.deserializeUleb128AsU32();
+  }
+
+  public deserializeVariantIndex(): number {
+    return this.deserializeUleb128AsU32();
+  }
+
+  public checkThatKeySlicesAreIncreasing(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _key1: [number, number],
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _key2: [number, number],
+  ): void {
+    // TODO(#119)
+    return;
+  }
+}

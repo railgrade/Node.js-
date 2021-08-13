@@ -11,4 +11,15 @@ public final class Requests {
 
     java.util.List<Request> value = new java.util.ArrayList<>();
 
-    for 
+    for (int i = 0; i < length; i++) {
+      value.add(Request.deserialize(deserializer));
+    }
+
+    deserializer.decrease_container_depth();
+
+    if (deserializer.get_buffer_offset() < input.length) {
+      throw new com.novi.serde.DeserializationError("Some input bytes were not read");
+    }
+    return value;
+  }
+}

@@ -46,4 +46,53 @@ export abstract class BinarySerializer implements Serializer {
     this.serializeBytes(BinarySerializer.textEncoder.encode(value));
   }
 
-  public serialize
+  public serializeBytes(value: Uint8Array): void {
+    this.serializeLen(value.length);
+    this.serialize(value);
+  }
+
+  public serializeBool(value: boolean): void {
+    const byteValue = value ? 1 : 0;
+    this.serialize(new Uint8Array([byteValue]));
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/explicit-module-boundary-types
+  public serializeUnit(_value: null): void {
+    return;
+  }
+
+  private serializeWithFunction(
+    fn: (byteOffset: number, value: number, littleEndian: boolean) => void,
+    bytesLength: number,
+    value: number,
+  ) {
+    this.ensureBufferWillHandleSize(bytesLength);
+    const dv = new DataView(this.buffer, this.offset);
+    fn.apply(dv, [0, value, true]);
+    this.offset += bytesLength;
+  }
+
+  public serializeU8(value: number): void {
+    this.serialize(new Uint8Array([value]));
+  }
+
+  public serializeU16(value: number): void {
+    this.serializeWithFunction(DataView.prototype.setUint16, 2, value);
+  }
+
+  public serializeU32(value: number): void {
+    this.serializeWithFunction(DataView.prototype.setUint32, 4, value);
+  }
+
+  public serializeU64(value: BigInt | number): void {
+    const low = BigInt(value.toString()) & BinarySerializer.BIG_32Fs;
+    const high = BigInt(value.toString()) >> BinarySerializer.BIG_32;
+
+    // write little endian number
+    this.serializeU32(Number(low));
+    this.serializeU32(Number(high));
+  }
+
+  public serializeU128(value: BigInt | number): void {
+    const low = BigInt(value.toString()) & BinarySerializer.BIG_64Fs;
+    const high = BigInt(value.toStri

@@ -150,4 +150,24 @@ export abstract class BinarySerializer implements Serializer {
   }
 
   public getBytes(): Uint8Array {
-    return new Uint8Array(this.buffer).slic
+    return new Uint8Array(this.buffer).slice(0, this.offset);
+  }
+
+  public serializeChar(_value: string): void {
+    throw new Error("Method serializeChar not implemented.");
+  }
+
+  public serializeF32(value: number): void {
+    const bytes = 4;
+    this.ensureBufferWillHandleSize(bytes);
+    new DataView(this.buffer, this.offset).setFloat32(0, value, true);
+    this.offset += bytes;
+  }
+
+  public serializeF64(value: number): void {
+    const bytes = 8;
+    this.ensureBufferWillHandleSize(bytes);
+    new DataView(this.buffer, this.offset).setFloat64(0, value, true);
+    this.offset += bytes;
+  }
+}

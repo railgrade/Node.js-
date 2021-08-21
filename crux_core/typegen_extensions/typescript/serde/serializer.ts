@@ -34,4 +34,19 @@ export interface Serializer {
 
   serializeI32(value: number): void;
 
-  serializeI64(
+  serializeI64(value: bigint | number): void;
+
+  serializeI128(value: bigint | number): void;
+
+  serializeLen(value: number): void;
+
+  serializeVariantIndex(value: number): void;
+
+  serializeOptionTag(value: boolean): void;
+
+  getBufferOffset(): number;
+
+  getBytes(): Uint8Array;
+
+  sortMapEntries(offsets: number[]): void;
+}

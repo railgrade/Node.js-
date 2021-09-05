@@ -55,4 +55,18 @@ impl From<crate::Request> for HttpRequest {
                 .flat_map(|(name, values)| {
                     values.iter().map(|value| HttpHeader {
                         name: name.to_string(),
-               
+                        value: value.to_string(),
+                    })
+                })
+                .collect(),
+        }
+    }
+}
+
+impl From<HttpResponse> for crate::ResponseAsync {
+    fn from(effect_response: HttpResponse) -> Self {
+        let mut res = crate::http::Response::new(effect_response.status);
+        res.set_body(effect_response.body);
+        crate::ResponseAsync::new(res)
+    }
+}

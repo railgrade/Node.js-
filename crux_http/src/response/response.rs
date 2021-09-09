@@ -59,4 +59,55 @@ impl<Body> Response<Body> {
     /// assert_eq!(res.version(), Some(Version::Http1_1));
     /// ```
     pub fn version(&self) -> Option<Version> {
-        self.
+        self.version
+    }
+
+    /// Get a header.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # let res = crux_http::testing::ResponseBuilder::ok()
+    /// #   .header("Content-Length", "1")
+    /// #   .build();
+    /// assert!(res.header("Content-Length").is_some());
+    /// ```
+    pub fn header(&self, name: impl Into<HeaderName>) -> Option<&HeaderValues> {
+        self.headers.get(name)
+    }
+
+    /// Get an HTTP header mutably.
+    pub fn header_mut(&mut self, name: impl Into<HeaderName>) -> Option<&mut HeaderValues> {
+        self.headers.get_mut(name)
+    }
+
+    /// Remove a header.
+    pub fn remove_header(&mut self, name: impl Into<HeaderName>) -> Option<HeaderValues> {
+        self.headers.remove(name)
+    }
+
+    /// Insert an HTTP header.
+    pub fn insert_header(&mut self, key: impl Into<HeaderName>, value: impl ToHeaderValues) {
+        self.headers.insert(key, value);
+    }
+
+    /// Append an HTTP header.
+    pub fn append_header(&mut self, key: impl Into<HeaderName>, value: impl ToHeaderValues) {
+        self.headers.append(key, value);
+    }
+
+    /// An iterator visiting all header pairs in arbitrary order.
+    #[must_use]
+    pub fn iter(&self) -> headers::Iter<'_> {
+        self.headers.iter()
+    }
+
+    /// An iterator visiting all header pairs in arbitrary order, with mutable references to the
+    /// values.
+    #[must_use]
+    pub fn iter_mut(&mut self) -> headers::IterMut<'_> {
+        self.headers.iter_mut()
+    }
+
+    /// An iterator visiting all header names in arbitrary order.
+    #[mu

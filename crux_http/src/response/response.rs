@@ -110,4 +110,58 @@ impl<Body> Response<Body> {
     }
 
     /// An iterator visiting all header names in arbitrary order.
-    #[mu
+    #[must_use]
+    pub fn header_names(&self) -> headers::Names<'_> {
+        self.headers.names()
+    }
+
+    /// An iterator visiting all header values in arbitrary order.
+    #[must_use]
+    pub fn header_values(&self) -> headers::Values<'_> {
+        self.headers.values()
+    }
+
+    /// Get the response content type as a `Mime`.
+    ///
+    /// Gets the `Content-Type` header and parses it to a `Mime` type.
+    ///
+    /// [Read more on MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types)
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if an invalid MIME type was set as a header.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # let res = crux_http::testing::ResponseBuilder::ok()
+    /// #   .header("Content-Type", "application/json")
+    /// #   .build();
+    /// use crux_http::http::mime;
+    /// assert_eq!(res.content_type(), Some(mime::JSON));
+    /// ```
+    pub fn content_type(&self) -> Option<Mime> {
+        self.header(CONTENT_TYPE)?.last().as_str().parse().ok()
+    }
+
+    pub fn body(&self) -> Option<&Body> {
+        self.body.as_ref()
+    }
+
+    pub fn take_body(&mut self) -> Option<Body> {
+        self.body.take()
+    }
+
+    pub fn with_body<NewBody>(self, body: NewBody) -> Response<NewBody> {
+        Response {
+            body: Some(body),
+            headers: self.headers,
+            status: self.status,
+            version: self.version,
+        }
+    }
+}
+
+impl Response<Vec<u8>> {
+    pub(crate) fn new_with_status(status: http::StatusCode) -> Self {
+     

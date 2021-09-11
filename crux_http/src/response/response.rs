@@ -214,4 +214,51 @@ impl Response<Vec<u8>> {
     /// disabled, Surf only supports reading UTF-8 response bodies. The "encoding"
     /// feature is enabled by default.
     ///
-   
+    /// # Errors
+    ///
+    /// Any I/O error encountered while reading the body is immediately returned
+    /// as an `Err`.
+    ///
+    /// If the body cannot be interpreted because the encoding is unsupported or
+    /// incorrect, an `Err` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() -> crux_http::Result<()> {
+    /// # let mut res = crux_http::testing::ResponseBuilder::ok()
+    /// #   .header("Content-Type", "application/json")
+    /// #   .body("hello".to_string().into_bytes())
+    /// #   .build();
+    /// let string: String = res.body_string()?;
+    /// assert_eq!(string, "hello");
+    /// # Ok(()) }
+    /// ```
+    pub fn body_string(&mut self) -> crate::Result<String> {
+        let bytes = self.body_bytes()?;
+
+        let mime = self.content_type();
+        let claimed_encoding = mime
+            .as_ref()
+            .and_then(|mime| mime.param("charset"))
+            .map(|name| name.to_string());
+        Ok(decode_body(bytes, claimed_encoding.as_deref())?)
+    }
+
+    /// Reads and deserialized the entire request body from json.
+    ///
+    /// # Errors
+    ///
+    /// Any I/O error encountered while reading the body is immediately returned
+    /// as an `Err`.
+    ///
+    /// If the body cannot be interpreted as valid json for the target type `T`,
+    /// an `Err` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use serde::{Deserialize, Serialize};
+    /// # fn main() -> crux_http::Result<()> {
+    /// # let mut res = crux_http::testing::ResponseBuilder::ok()
+    /// #   .header("Content-Type", 

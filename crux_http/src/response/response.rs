@@ -164,4 +164,54 @@ impl<Body> Response<Body> {
 
 impl Response<Vec<u8>> {
     pub(crate) fn new_with_status(status: http::StatusCode) -> Self {
-     
+        let headers = new_headers();
+
+        Response {
+            status,
+            headers,
+            version: None,
+            body: None,
+        }
+    }
+
+    /// Reads the entire request body into a byte buffer.
+    ///
+    /// This method can be called after the body has already been read, but will
+    /// produce an empty buffer.
+    ///
+    /// # Errors
+    ///
+    /// Any I/O error encountered while reading the body is immediately returned
+    /// as an `Err`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() -> crux_http::Result<()> {
+    /// # let mut res = crux_http::testing::ResponseBuilder::ok()
+    /// #   .header("Content-Type", "application/json")
+    /// #   .body(vec![0u8, 1])
+    /// #   .build();
+    /// let bytes: Vec<u8> = res.body_bytes()?;
+    /// # Ok(()) }
+    /// ```
+    pub fn body_bytes(&mut self) -> crate::Result<Vec<u8>> {
+        self.body
+            .take()
+            .ok_or_else(|| crate::Error::new(Some(self.status()), "Body had no bytes"))
+    }
+
+    /// Reads the entire response body into a string.
+    ///
+    /// This method can be called after the body has already been read, but will
+    /// produce an empty buffer.
+    ///
+    /// # Encodings
+    ///
+    /// If the "encoding" feature is enabled, this method tries to decode the body
+    /// with the encoding that is specified in the Content-Type header. If the header
+    /// does not specify an encoding, UTF-8 is assumed. If the "encoding" feature is
+    /// disabled, Surf only supports reading UTF-8 response bodies. The "encoding"
+    /// feature is enabled by default.
+    ///
+   

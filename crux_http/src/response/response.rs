@@ -261,4 +261,62 @@ impl Response<Vec<u8>> {
     /// # use serde::{Deserialize, Serialize};
     /// # fn main() -> crux_http::Result<()> {
     /// # let mut res = crux_http::testing::ResponseBuilder::ok()
-    /// #   .header("Content-Type", 
+    /// #   .header("Content-Type", "application/json")
+    /// #   .body("{\"ip\": \"127.0.0.1\"}".to_string().into_bytes())
+    /// #   .build();
+    /// #[derive(Deserialize, Serialize)]
+    /// struct Ip {
+    ///     ip: String
+    /// }
+    ///
+    /// let Ip { ip } = res.body_json()?;
+    /// assert_eq!(ip, "127.0.0.1");
+    /// # Ok(()) }
+    /// ```
+    pub fn body_json<T: DeserializeOwned>(&mut self) -> crate::Result<T> {
+        let body_bytes = self.body_bytes()?;
+        serde_json::from_slice(&body_bytes).map_err(crate::Error::from)
+    }
+}
+
+impl<Body> AsRef<http::Headers> for Response<Body> {
+    fn as_ref(&self) -> &http::Headers {
+        &self.headers
+    }
+}
+
+impl<Body> AsMut<http::Headers> for Response<Body> {
+    fn as_mut(&mut self) -> &mut http::Headers {
+        &mut self.headers
+    }
+}
+
+impl<Body> fmt::Debug for Response<Body> {
+    #[allow(missing_doc_code_examples)]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Response")
+            .field("version", &self.version)
+            .field("status", &self.status)
+            .field("headers", &self.headers)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<Body> Index<HeaderName> for Response<Body> {
+    type Output = HeaderValues;
+
+    /// Returns a reference to the value corresponding to the supplied name.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the name is not present in `Response`.
+    #[inline]
+    fn index(&self, name: HeaderName) -> &HeaderValues {
+        &self.headers[name]
+    }
+}
+
+impl<Body> Index<&str> for Response<Body> {
+    type Output = HeaderValues;
+
+    /// Retur

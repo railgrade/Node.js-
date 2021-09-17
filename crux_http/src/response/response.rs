@@ -376,4 +376,17 @@ mod header_serde {
     where
         D: Deserializer<'de>,
     {
-        let strs = <Vec<(String, Vec<Stri
+        let strs = <Vec<(String, Vec<String>)> as serde::Deserialize>::deserialize(deserializer)?;
+
+        let mut headers = new_headers();
+
+        for (name, values) in strs {
+            let name = HeaderName::from_string(name).map_err(D::Error::custom)?;
+            for value in values {
+                headers.append(&name, value);
+            }
+        }
+
+        Ok(headers)
+    }
+}

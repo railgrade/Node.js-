@@ -319,4 +319,61 @@ impl<Body> Index<HeaderName> for Response<Body> {
 impl<Body> Index<&str> for Response<Body> {
     type Output = HeaderValues;
 
-    /// Retur
+    /// Returns a reference to the value corresponding to the supplied name.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the name is not present in `Response`.
+    #[inline]
+    fn index(&self, name: &str) -> &HeaderValues {
+        &self.headers[name]
+    }
+}
+
+impl<Body> PartialEq for Response<Body>
+where
+    Body: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.version == other.version
+            && self.status == other.status
+            && self.headers.iter().zip(other.headers.iter()).all(
+                |((lhs_name, lhs_values), (rhs_name, rhs_values))| {
+                    lhs_name == rhs_name
+                        && lhs_values
+                            .iter()
+                            .zip(rhs_values.iter())
+                            .all(|(lhs, rhs)| lhs == rhs)
+                },
+            )
+            && self.body == other.body
+    }
+}
+
+impl<Body> Eq for Response<Body> where Body: Eq {}
+
+mod header_serde {
+    use crate::{
+        http::{self, Headers},
+        response::new_headers,
+    };
+    use http::headers::HeaderName;
+    use serde::{de::Error, Deserializer, Serializer};
+
+    pub fn serialize<S>(headers: &Headers, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.collect_map(headers.iter().map(|(name, values)| {
+            (
+                name.as_str(),
+                values.iter().map(|v| v.as_str()).collect::<Vec<_>>(),
+            )
+        }))
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Headers, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let strs = <Vec<(String, Vec<Stri

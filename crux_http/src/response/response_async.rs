@@ -96,4 +96,57 @@ impl ResponseAsync {
 
     /// Append an HTTP header.
     pub fn append_header(&mut self, key: impl Into<HeaderName>, value: impl ToHeaderValues) {
-        self.
+        self.res.append_header(key, value);
+    }
+
+    /// An iterator visiting all header pairs in arbitrary order.
+    #[must_use]
+    pub fn iter(&self) -> headers::Iter<'_> {
+        self.res.iter()
+    }
+
+    /// An iterator visiting all header pairs in arbitrary order, with mutable references to the
+    /// values.
+    #[must_use]
+    pub fn iter_mut(&mut self) -> headers::IterMut<'_> {
+        self.res.iter_mut()
+    }
+
+    /// An iterator visiting all header names in arbitrary order.
+    #[must_use]
+    pub fn header_names(&self) -> headers::Names<'_> {
+        self.res.header_names()
+    }
+
+    /// An iterator visiting all header values in arbitrary order.
+    #[must_use]
+    pub fn header_values(&self) -> headers::Values<'_> {
+        self.res.header_values()
+    }
+
+    /// Get a response scoped extension value.
+    #[must_use]
+    pub fn ext<T: Send + Sync + 'static>(&self) -> Option<&T> {
+        self.res.ext().get()
+    }
+
+    /// Set a response scoped extension value.
+    pub fn insert_ext<T: Send + Sync + 'static>(&mut self, val: T) {
+        self.res.ext_mut().insert(val);
+    }
+
+    /// Get the response content type as a `Mime`.
+    ///
+    /// Gets the `Content-Type` header and parses it to a `Mime` type.
+    ///
+    /// [Read more on MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types)
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if an invalid MIME type was set as a header.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crux_http::client::Client;
+  

@@ -43,4 +43,57 @@ impl ResponseAsync {
     /// assert_eq!(res.status(), 200);
     /// # Ok(()) }
     /// ```
-    pub fn status(&self) -> Status
+    pub fn status(&self) -> StatusCode {
+        self.res.status()
+    }
+
+    /// Get the HTTP protocol version.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crux_http::client::Client;
+    /// # async fn middleware(client: Client) -> crux_http::Result<()> {
+    /// use crux_http::http::Version;
+    ///
+    /// let res = client.get("https://httpbin.org/get").await?;
+    /// assert_eq!(res.version(), Some(Version::Http1_1));
+    /// # Ok(()) }
+    /// ```
+    pub fn version(&self) -> Option<Version> {
+        self.res.version()
+    }
+
+    /// Get a header.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crux_http::client::Client;
+    /// # async fn middleware(client: Client) -> crux_http::Result<()> {
+    /// let res = client.get("https://httpbin.org/get").await?;
+    /// assert!(res.header("Content-Length").is_some());
+    /// # Ok(()) }
+    /// ```
+    pub fn header(&self, name: impl Into<HeaderName>) -> Option<&HeaderValues> {
+        self.res.header(name)
+    }
+
+    /// Get an HTTP header mutably.
+    pub fn header_mut(&mut self, name: impl Into<HeaderName>) -> Option<&mut HeaderValues> {
+        self.res.header_mut(name)
+    }
+
+    /// Remove a header.
+    pub fn remove_header(&mut self, name: impl Into<HeaderName>) -> Option<HeaderValues> {
+        self.res.remove_header(name)
+    }
+
+    /// Insert an HTTP header.
+    pub fn insert_header(&mut self, key: impl Into<HeaderName>, value: impl ToHeaderValues) {
+        self.res.insert_header(key, value);
+    }
+
+    /// Append an HTTP header.
+    pub fn append_header(&mut self, key: impl Into<HeaderName>, value: impl ToHeaderValues) {
+        self.

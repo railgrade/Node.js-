@@ -149,4 +149,52 @@ impl ResponseAsync {
     ///
     /// ```no_run
     /// # use crux_http::client::Client;
-  
+    /// # async fn middleware(client: Client) -> crux_http::Result<()> {
+    /// use crux_http::http::mime;
+    /// let res = client.get("https://httpbin.org/json").await?;
+    /// assert_eq!(res.content_type(), Some(mime::JSON));
+    /// # Ok(()) }
+    /// ```
+    pub fn content_type(&self) -> Option<Mime> {
+        self.res.content_type()
+    }
+
+    /// Get the length of the body stream, if it has been set.
+    ///
+    /// This value is set when passing a fixed-size object into as the body.
+    /// E.g. a string, or a buffer. Consumers of this API should check this
+    /// value to decide whether to use `Chunked` encoding, or set the
+    /// response length.
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> Option<usize> {
+        self.res.len()
+    }
+
+    /// Returns `true` if the set length of the body stream is zero, `false`
+    /// otherwise.
+    pub fn is_empty(&self) -> Option<bool> {
+        self.res.is_empty()
+    }
+
+    /// Set the body reader.
+    pub fn set_body(&mut self, body: impl Into<Body>) {
+        self.res.set_body(body);
+    }
+
+    /// Take the response body as a `Body`.
+    ///
+    /// This method can be called after the body has already been taken or read,
+    /// but will return an empty `Body`.
+    ///
+    /// Useful for adjusting the whole body, such as in middleware.
+    pub fn take_body(&mut self) -> Body {
+        self.res.take_body()
+    }
+
+    /// Swaps the value of the body with another body, without deinitializing
+    /// either one.
+    pub fn swap_body(&mut self, body: &mut Body) {
+        self.res.swap_body(body)
+    }
+
+    /// Reads the entire request body in

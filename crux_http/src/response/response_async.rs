@@ -197,4 +197,46 @@ impl ResponseAsync {
         self.res.swap_body(body)
     }
 
-    /// Reads the entire request body in
+    /// Reads the entire request body into a byte buffer.
+    ///
+    /// This method can be called after the body has already been read, but will
+    /// produce an empty buffer.
+    ///
+    /// # Errors
+    ///
+    /// Any I/O error encountered while reading the body is immediately returned
+    /// as an `Err`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crux_http::client::Client;
+    /// # async fn middleware(client: Client) -> crux_http::Result<()> {
+    /// let mut res = client.get("https://httpbin.org/get").await?;
+    /// let bytes: Vec<u8> = res.body_bytes().await?;
+    /// # Ok(()) }
+    /// ```
+    pub async fn body_bytes(&mut self) -> crate::Result<Vec<u8>> {
+        Ok(self.res.body_bytes().await?)
+    }
+
+    /// Reads the entire response body into a string.
+    ///
+    /// This method can be called after the body has already been read, but will
+    /// produce an empty buffer.
+    ///
+    /// # Encodings
+    ///
+    /// If the "encoding" feature is enabled, this method tries to decode the body
+    /// with the encoding that is specified in the Content-Type header. If the header
+    /// does not specify an encoding, UTF-8 is assumed. If the "encoding" feature is
+    /// disabled, Surf only supports reading UTF-8 response bodies. The "encoding"
+    /// feature is enabled by default.
+    ///
+    /// # Errors
+    ///
+    /// Any I/O error encountered while reading the body is immediately returned
+    /// as an `Err`.
+    ///
+    /// If the body cannot be interpreted because the encoding is unsupported or
+    /// incorrect, an `Err` is return

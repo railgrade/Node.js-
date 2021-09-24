@@ -239,4 +239,50 @@ impl ResponseAsync {
     /// as an `Err`.
     ///
     /// If the body cannot be interpreted because the encoding is unsupported or
-    /// incorrect, an `Err` is return
+    /// incorrect, an `Err` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crux_http::client::Client;
+    /// # async fn middleware(client: Client) -> crux_http::Result<()> {
+    /// let mut res = client.get("https://httpbin.org/get").await?;
+    /// let string: String = res.body_string().await?;
+    /// # Ok(()) }
+    /// ```
+    pub async fn body_string(&mut self) -> crate::Result<String> {
+        let bytes = self.body_bytes().await?;
+        let mime = self.content_type();
+        let claimed_encoding = mime
+            .as_ref()
+            .and_then(|mime| mime.param("charset"))
+            .map(|name| name.to_string());
+        Ok(decode_body(bytes, claimed_encoding.as_deref())?)
+    }
+
+    /// Reads and deserialized the entire request body from json.
+    ///
+    /// # Errors
+    ///
+    /// Any I/O error encountered while reading the body is immediately returned
+    /// as an `Err`.
+    ///
+    /// If the body cannot be interpreted as valid json for the target type `T`,
+    /// an `Err` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use serde::{Deserialize, Serialize};
+    /// # use crux_http::client::Client;
+    /// # async fn middleware(client: Client) -> crux_http::Result<()> {
+    /// #[derive(Deserialize, Serialize)]
+    /// struct Ip {
+    ///     ip: String
+    /// }
+    ///
+    /// let mut res = client.get("https://api.ipify.org?format=json").await?;
+    /// let Ip { ip } = res.body_json().await?;
+    /// # Ok(()) }
+    /// ```
+    pub async fn body_json<T: DeserializeOwned>(&mut self) -> crate::Result<T

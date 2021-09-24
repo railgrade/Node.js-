@@ -345,3 +345,62 @@ impl AsMut<http::Headers> for ResponseAsync {
     }
 }
 
+impl AsRef<http::Response> for ResponseAsync {
+    fn as_ref(&self) -> &http::Response {
+        &self.res
+    }
+}
+
+impl AsMut<http::Response> for ResponseAsync {
+    fn as_mut(&mut self) -> &mut http::Response {
+        &mut self.res
+    }
+}
+
+impl AsyncRead for ResponseAsync {
+    #[allow(missing_doc_code_examples)]
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<Result<usize, io::Error>> {
+        Pin::new(&mut self.res).poll_read(cx, buf)
+    }
+}
+
+impl fmt::Debug for ResponseAsync {
+    #[allow(missing_doc_code_examples)]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Response")
+            .field("response", &self.res)
+            .finish()
+    }
+}
+
+impl Index<HeaderName> for ResponseAsync {
+    type Output = HeaderValues;
+
+    /// Returns a reference to the value corresponding to the supplied name.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the name is not present in `Response`.
+    #[inline]
+    fn index(&self, name: HeaderName) -> &HeaderValues {
+        &self.res[name]
+    }
+}
+
+impl Index<&str> for ResponseAsync {
+    type Output = HeaderValues;
+
+    /// Returns a reference to the value corresponding to the supplied name.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the name is not present in `Response`.
+    #[inline]
+    fn index(&self, name: &str) -> &HeaderValues {
+        &self.res[name]
+    }
+}

@@ -62,4 +62,36 @@ mod tests {
     use assert_matches::assert_matches;
 
     use crate::shared::{App, Effect, Event, Model};
- 
+    use crux_core::testing::AppTester;
+    use crux_http::protocol::{HttpHeader, HttpRequest, HttpResponse};
+
+    #[test]
+    fn with_tester() {
+        let app = AppTester::<App, _>::default();
+        let mut model = Model::default();
+
+        let update = app.update(Event::Get, &mut model);
+
+        assert_eq!(
+            update.effects[0],
+            Effect::Http(HttpRequest {
+                method: "GET".to_string(),
+                url: "http://example.com/".to_string(),
+                headers: vec![HttpHeader {
+                    name: "authorization".to_string(),
+                    value: "secret-token".to_string()
+                }]
+            })
+        );
+
+        let update = update.effects[0].resolve(&HttpResponse {
+            status: 200,
+            body: serde_json::to_vec("hello").unwrap(),
+        });
+
+        let actual = update.events;
+        assert_matches!(&actual[..], [Event::Set(Ok(response))] => {
+            assert_eq!(*response.body().unwrap(), "\"hello\"".to_string())
+        })
+    }
+}

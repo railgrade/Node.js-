@@ -55,4 +55,41 @@ where
             let output = ctx.request_from_shell(KeyValueOperation::Read(key)).await;
 
             ctx.update_app(make_event(output))
-    
+        });
+    }
+
+    /// Set `key` to be the provided `value`. Typically the bytes would be
+    /// a value serialized/deserialized by the app.
+    ///
+    /// Will dispatch the event with a `KeyValueOutput::Write(bool)` as payload
+    pub fn write<F>(&self, key: &str, value: Vec<u8>, make_event: F)
+    where
+        F: Fn(KeyValueOutput) -> Ev + Send + Sync + 'static,
+    {
+        self.context.spawn({
+            let context = self.context.clone();
+            let key = key.to_string();
+            async move {
+                let resp = context
+                    .request_from_shell(KeyValueOperation::Write(key, value))
+                    .await;
+
+                context.update_app(make_event(resp))
+            }
+        });
+    }
+}
+
+impl<Ef> Capability<Ef> for KeyValue<Ef> {
+    type Operation = KeyValueOperation;
+    type MappedSelf<MappedEv> = KeyValue<MappedEv>;
+
+    fn map_event<F, NewEvent>(&self, f: F) -> Self::MappedSelf<NewEvent>
+    where
+        F: Fn(NewEvent) -> Ef + Send + Sync + Copy + 'static,
+        Ef: 'static,
+        NewEvent: 'static,
+    {
+        KeyValue::new(self.context.map_event(f))
+    }
+}

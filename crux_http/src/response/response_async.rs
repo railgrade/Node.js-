@@ -285,4 +285,63 @@ impl ResponseAsync {
     /// let Ip { ip } = res.body_json().await?;
     /// # Ok(()) }
     /// ```
-    pub async fn body_json<T: DeserializeOwned>(&mut self) -> crate::Result<T
+    pub async fn body_json<T: DeserializeOwned>(&mut self) -> crate::Result<T> {
+        let body_bytes = self.body_bytes().await?;
+        serde_json::from_slice(&body_bytes).map_err(crate::Error::from)
+    }
+
+    /// Reads and deserialized the entire request body from form encoding.
+    ///
+    /// # Errors
+    ///
+    /// Any I/O error encountered while reading the body is immediately returned
+    /// as an `Err`.
+    ///
+    /// If the body cannot be interpreted as valid json for the target type `T`,
+    /// an `Err` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use serde::{Deserialize, Serialize};
+    /// # use crux_http::client::Client;
+    /// # async fn middleware(client: Client) -> crux_http::Result<()> {
+    /// #[derive(Deserialize, Serialize)]
+    /// struct Body {
+    ///     apples: u32
+    /// }
+    ///
+    /// let mut res = client.get("https://api.example.com/v1/response").await?;
+    /// let Body { apples } = res.body_form().await?;
+    /// # Ok(()) }
+    /// ```
+    pub async fn body_form<T: serde::de::DeserializeOwned>(&mut self) -> crate::Result<T> {
+        Ok(self.res.body_form().await?)
+    }
+}
+
+impl From<http::Response> for ResponseAsync {
+    fn from(response: http::Response) -> Self {
+        Self::new(response)
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<http::Response> for ResponseAsync {
+    fn into(self) -> http::Response {
+        self.res
+    }
+}
+
+impl AsRef<http::Headers> for ResponseAsync {
+    fn as_ref(&self) -> &http::Headers {
+        self.res.as_ref()
+    }
+}
+
+impl AsMut<http::Headers> for ResponseAsync {
+    fn as_mut(&mut self) -> &mut http::Headers {
+        self.res.as_mut()
+    }
+}
+

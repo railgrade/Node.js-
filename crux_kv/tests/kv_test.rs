@@ -112,4 +112,51 @@ mod shell {
                 match effect {
                     Effect::Render(_) => received.push(effect.clone()),
                     Effect::KeyValue(KeyValueOperation::Write(ref k, ref v)) => {
-                        recei
+                        received.push(effect.clone());
+
+                        // do work
+                        kv_store.insert(k.clone(), v.clone());
+                        queue.push_back(CoreMessage::Response(
+                            uuid,
+                            Outcome::KeyValue(KeyValueOutput::Write(true)),
+                        ));
+
+                        // now trigger a read
+                        queue.push_back(CoreMessage::Event(Event::Read));
+                    }
+                    Effect::KeyValue(KeyValueOperation::Read(ref k)) => {
+                        received.push(effect.clone());
+
+                        // do work
+                        let v = kv_store.get(k).unwrap();
+                        queue.push_back(CoreMessage::Response(
+                            uuid,
+                            Outcome::KeyValue(KeyValueOutput::Read(Some(v.to_vec()))),
+                        ));
+                    }
+                }
+            }
+        }
+
+        let view = bcs::from_bytes::<ViewModel>(&core.view())?;
+        Ok((received, view))
+    }
+}
+
+mod tests {
+    use crate::{shared::Effect, shell::run};
+    use anyhow::Result;
+    use crux_core::render::RenderOperation;
+    use crux_kv::KeyValueOperation;
+
+    #[test]
+    pub fn test_http() -> Result<()> {
+        let (received, view) = run()?;
+        assert_eq!(
+            received,
+            vec![
+                Effect::KeyValue(KeyValueOperation::Write(
+                    "test".to_string(),
+                    42i32.to_ne_bytes().to_vec()
+                )),
+          

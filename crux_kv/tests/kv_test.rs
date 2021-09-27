@@ -63,4 +63,53 @@ mod shared {
 
     #[derive(Effect)]
     pub struct Capabilities {
-        pub key_value: KeyValue<Event>
+        pub key_value: KeyValue<Event>,
+        pub render: Render<Event>,
+    }
+}
+
+mod shell {
+    use super::shared::{App, Effect, Event, ViewModel};
+    use anyhow::Result;
+    use crux_core::{Core, Request};
+    use crux_kv::{KeyValueOperation, KeyValueOutput};
+    use std::collections::{HashMap, VecDeque};
+
+    pub enum Outcome {
+        KeyValue(KeyValueOutput),
+    }
+
+    enum CoreMessage {
+        Event(Event),
+        Response(Vec<u8>, Outcome),
+    }
+
+    pub fn run() -> Result<(Vec<Effect>, ViewModel)> {
+        let core: Core<Effect, App> = Core::default();
+        let mut queue: VecDeque<CoreMessage> = VecDeque::new();
+
+        queue.push_back(CoreMessage::Event(Event::Write));
+
+        let mut received = vec![];
+        let mut kv_store = HashMap::new();
+
+        while !queue.is_empty() {
+            let msg = queue.pop_front();
+
+            let reqs = match msg {
+                Some(CoreMessage::Event(m)) => core.process_event(&bcs::to_bytes(&m)?),
+                Some(CoreMessage::Response(uuid, output)) => core.handle_response(
+                    &uuid,
+                    &match output {
+                        Outcome::KeyValue(x) => bcs::to_bytes(&x)?,
+                    },
+                ),
+                _ => vec![],
+            };
+            let reqs: Vec<Request<Effect>> = bcs::from_bytes(&reqs)?;
+
+            for Request { uuid, effect } in reqs {
+                match effect {
+                    Effect::Render(_) => received.push(effect.clone()),
+                    Effect::KeyValue(KeyValueOperation::Write(ref k, ref v)) => {
+                        recei

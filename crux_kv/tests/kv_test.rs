@@ -159,4 +159,12 @@ mod tests {
                     "test".to_string(),
                     42i32.to_ne_bytes().to_vec()
                 )),
-          
+                Effect::Render(RenderOperation),
+                Effect::KeyValue(KeyValueOperation::Read("test".to_string())),
+                Effect::Render(RenderOperation)
+            ]
+        );
+        assert_eq!(view.result, "Success: true, Value: 42");
+        Ok(())
+    }
+}

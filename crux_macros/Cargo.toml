@@ -1,0 +1,24 @@
+[package]
+name = "crux_macros"
+description = "Macros for use with crux_core"
+authors = ["Red Badger Consulting Limited"]
+repository = "https://github.com/redbadger/crux/"
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+license = "Apache-2.0"
+keywords = ["crux", "crux_core", "cross-platform-ui", "ffi", "wasm"]
+rust-version.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+darling = "0.14.4"
+proc-macro2 = "1.0.51"
+quote = "1.0.23"
+syn = "1.0.109"
+
+[dev-dependencies]
+insta = "1.28"
+prettyplease = "0.1"

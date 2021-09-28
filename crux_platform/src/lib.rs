@@ -39,4 +39,21 @@ where
                 let response = context.request_from_shell(PlatformRequest).await;
 
                 context.update_app(callback(response));
-    
+            }
+        });
+    }
+}
+
+impl<Ef> Capability<Ef> for Platform<Ef> {
+    type Operation = PlatformRequest;
+    type MappedSelf<MappedEv> = Platform<MappedEv>;
+
+    fn map_event<F, NewEvent>(&self, f: F) -> Self::MappedSelf<NewEvent>
+    where
+        F: Fn(NewEvent) -> Ef + Send + Sync + Copy + 'static,
+        Ef: 'static,
+        NewEvent: 'static,
+    {
+        Platform::new(self.context.map_event(f))
+    }
+}

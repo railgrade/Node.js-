@@ -78,4 +78,52 @@ mod shell {
         let mut received = vec![];
 
         while !queue.is_empty() {
-            let msg = queue.pop_fron
+            let msg = queue.pop_front();
+
+            let reqs = match msg {
+                Some(CoreMessage::Event(m)) => core.process_event(&bcs::to_bytes(&m)?),
+                Some(CoreMessage::Response(uuid, output)) => core.handle_response(
+                    &uuid,
+                    &match output {
+                        Outcome::Time(x) => bcs::to_bytes(&x)?,
+                    },
+                ),
+                _ => vec![],
+            };
+            let reqs: Vec<Request<Effect>> = bcs::from_bytes(&reqs)?;
+
+            for Request { uuid, effect } in reqs {
+                match effect {
+                    Effect::Render(_) => received.push(effect),
+                    Effect::Time(_) => {
+                        received.push(effect);
+                        queue.push_back(CoreMessage::Response(
+                            uuid,
+                            Outcome::Time(TimeResponse(
+                                "2022-12-01T01:47:12.746202562+00:00".to_string(),
+                            )),
+                        ));
+                    }
+                }
+            }
+        }
+
+        let view = bcs::from_bytes::<ViewModel>(&core.view())?;
+        Ok((received, view))
+    }
+}
+
+mod tests {
+    use crate::{shared::Effect, shell::run};
+    use anyhow::Result;
+    use crux_core::render::RenderOperation;
+    use crux_time::TimeRequest;
+
+    #[test]
+    pub fn test_time() -> Result<()> {
+        let (received, view) = run()?;
+        assert_eq!(
+            received,
+            vec![Effect::Time(TimeRequest), Effect::Render(RenderOperation)]
+        );
+        assert_eq!(view.time, "2022-

@@ -19,4 +19,49 @@ pub struct TimeRequest;
 pub struct TimeResponse(pub String);
 
 impl Operation for TimeRequest {
-    type Output = T
+    type Output = TimeResponse;
+}
+
+/// The Time capability API.
+pub struct Time<Ev> {
+    context: CapabilityContext<TimeRequest, Ev>,
+}
+
+impl<Ev> Time<Ev>
+where
+    Ev: 'static,
+{
+    pub fn new(context: CapabilityContext<TimeRequest, Ev>) -> Self {
+        Self { context }
+    }
+
+    /// Request current time, which will be passed to the app as `TimeResponse`
+    /// wrapped in the event produced by the `callback`.
+    pub fn get<F>(&self, callback: F)
+    where
+        F: Fn(TimeResponse) -> Ev + Send + Sync + 'static,
+    {
+        self.context.spawn({
+            let context = self.context.clone();
+            async move {
+                let response = context.request_from_shell(TimeRequest).await;
+
+                context.update_app(callback(response));
+            }
+        });
+    }
+}
+
+impl<Ef> Capability<Ef> for Time<Ef> {
+    type Operation = TimeRequest;
+    type MappedSelf<MappedEv> = Time<MappedEv>;
+
+    fn map_event<F, NewEvent>(&self, f: F) -> Self::MappedSelf<NewEvent>
+    where
+        F: Fn(NewEvent) -> Ef + Send + Sync + Copy + 'static,
+        Ef: 'static,
+        NewEvent: 'static,
+    {
+        Time::new(self.context.map_event(f))
+    }
+}

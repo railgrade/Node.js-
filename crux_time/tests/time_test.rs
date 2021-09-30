@@ -126,4 +126,7 @@ mod tests {
             received,
             vec![Effect::Time(TimeRequest), Effect::Render(RenderOperation)]
         );
-        assert_eq!(view.time, "2022-
+        assert_eq!(view.time, "2022-12-01T01:47:12.746202562+00:00");
+        Ok(())
+    }
+}

@@ -18,4 +18,13 @@
 1. [Elm Architecture](./guide/elm_architecture.md)
 1. [Capabilities](./guide/capabilities.md)
    1. [Capability APIs](./guide/capability_apis.md)
-1. [Message interface between core and shell](./gu
+1. [Message interface between core and shell](./guide/message_interface.md)
+1. [Composable Applications](./guide/composing.md)
+
+# Internals
+
+1. [FFI interface](./internals/uniffi.md)
+   1. [Core API](./internals/core_api.md)
+   1. [Type generation](./internals/typegen.md)
+1. [Serialization](./internals/serialization.md)
+1. [Continuations](./internals/continuations.md)

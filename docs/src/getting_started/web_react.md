@@ -64,4 +64,74 @@ const nextConfig = {
     if (!loaded) {
       nextConfig.plugins.push(
         new WasmPackPlugin({
-          crateDirectory: path.resolve(_
+          crateDirectory: path.resolve(__dirname, "..", "shared"),
+          extraArgs: "--target web",
+          outDir: path.resolve(__dirname, "shared", "core"),
+        })
+      );
+      loaded = true;
+    }
+
+    return nextConfig;
+  },
+};
+
+module.exports = nextConfig;
+```
+
+## Add the Shared Types
+
+To generate the shared types for TypeScript, we can just run `cargo build` from the root of our repository. You can check that they have been generated correctly:
+
+```sh
+ls --tree shared_types/generated/typescript
+shared_types/generated/typescript
+├── bcs
+│  ├── bcsDeserializer.d.ts
+│  ├── bcsDeserializer.js
+│  ├── bcsDeserializer.ts
+│  ├── bcsSerializer.d.ts
+│  ├── bcsSerializer.js
+│  ├── bcsSerializer.ts
+│  ├── mod.d.ts
+│  ├── mod.js
+│  └── mod.ts
+├── node_modules
+│  └── typescript -> .pnpm/typescript@4.8.4/node_modules/typescript
+├── package.json
+├── pnpm-lock.yaml
+├── serde
+│  ├── binaryDeserializer.d.ts
+│  ├── binaryDeserializer.js
+│  ├── binaryDeserializer.ts
+│  ├── binarySerializer.d.ts
+│  ├── binarySerializer.js
+│  ├── binarySerializer.ts
+│  ├── deserializer.d.ts
+│  ├── deserializer.js
+│  ├── deserializer.ts
+│  ├── mod.d.ts
+│  ├── mod.js
+│  ├── mod.ts
+│  ├── serializer.d.ts
+│  ├── serializer.js
+│  ├── serializer.ts
+│  ├── types.d.ts
+│  ├── types.js
+│  └── types.ts
+├── tsconfig.json
+└── types
+   ├── shared_types.d.ts
+   ├── shared_types.js
+   └── shared_types.ts
+```
+
+You can see that it also generates an `npm` package that we can add directly to our project.
+
+```sh
+pnpm add ../shared_types/generated/typescript
+```
+
+## Create some UI
+
+### Hello World c

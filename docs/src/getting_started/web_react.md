@@ -134,4 +134,61 @@ pnpm add ../shared_types/generated/typescript
 
 ## Create some UI
 
-### Hello World c
+### Hello World counter example
+
+```admonish example
+There are several [examples](https://github.com/redbadger/crux/tree/master/examples) of Next.js apps in the Crux repository.
+
+However, the simplest example is the [Hello World counter example](https://github.com/redbadger/crux/tree/master/examples/hello_world) — it only has `shared` and `shared_types` libraries, which will work with the following example code.
+```
+
+Edit `web-nextjs/src/pages/index.tsx` to look like this:
+
+```typescript
+import type { NextPage } from "next";
+import Head from "next/head";
+import { useEffect, useState } from "react";
+
+import init_core, { process_event as sendEvent, view } from "../../shared/core";
+import * as types from "shared_types/types/shared_types";
+import * as bcs from "shared_types/bcs/mod";
+
+interface Event {
+  kind: "event";
+  event: types.Event;
+}
+
+type State = {
+  count: string;
+};
+
+const initialState: State = {
+  count: "",
+};
+
+function deserializeRequests(bytes: Uint8Array) {
+  let deserializer = new bcs.BcsDeserializer(bytes);
+
+  const len = deserializer.deserializeLen();
+
+  let requests: types.Request[] = [];
+
+  for (let i = 0; i < len; i++) {
+    const request = types.Request.deserialize(deserializer);
+    requests.push(request);
+  }
+
+  return requests;
+}
+
+const Home: NextPage = () => {
+  const [state, setState] = useState(initialState);
+
+  const dispatch = (action: Event) => {
+    const serializer = new bcs.BcsSerializer();
+    action.event.serialize(serializer);
+    const requests = sendEvent(serializer.getBytes());
+    handleRequests(requests);
+  };
+
+  const h

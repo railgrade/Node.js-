@@ -191,4 +191,64 @@ const Home: NextPage = () => {
     handleRequests(requests);
   };
 
-  const h
+  const handleRequests = async (bytes: Uint8Array) => {
+    let requests = deserializeRequests(bytes);
+
+    for (const { uuid: _, effect } of requests) {
+      switch (effect.constructor) {
+        case types.EffectVariantRender:
+          let bytes = view();
+          let viewDeserializer = new bcs.BcsDeserializer(bytes);
+          let viewModel = types.ViewModel.deserialize(viewDeserializer);
+
+          setState({
+            count: viewModel.count,
+          });
+
+          break;
+      }
+    }
+  };
+
+  useEffect(() => {
+    async function loadCore() {
+      await init_core();
+
+      // Initial event
+      dispatch({
+        kind: "event",
+        event: new types.EventVariantReset(),
+      });
+    }
+
+    loadCore();
+  }, []);
+
+  return (
+    <>
+      <Head>
+        <title>Next.js Example</title>
+      </Head>
+
+      <main>
+        <section className="box container has-text-centered m-5">
+          <p className="is-size-5">{state.count}</p>
+          <div className="buttons section is-centered">
+            <button
+              className="button is-primary is-danger"
+              onClick={() =>
+                dispatch({
+                  kind: "event",
+                  event: new types.EventVariantReset(),
+                })
+              }
+            >
+              {"Reset"}
+            </button>
+            <button
+              className="button is-primary is-success"
+              onClick={() =>
+                dispatch({
+                  kind: "event",
+                  event: new types.EventVariantIncrement(),
+           

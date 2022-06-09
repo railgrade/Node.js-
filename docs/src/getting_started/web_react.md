@@ -251,4 +251,65 @@ const Home: NextPage = () => {
                 dispatch({
                   kind: "event",
                   event: new types.EventVariantIncrement(),
-           
+                })
+              }
+            >
+              {"Increment"}
+            </button>
+            <button
+              className="button is-primary is-warning"
+              onClick={() =>
+                dispatch({
+                  kind: "event",
+                  event: new types.EventVariantDecrement(),
+                })
+              }
+            >
+              {"Decrement"}
+            </button>
+          </div>
+        </section>
+      </main>
+    </>
+  );
+};
+
+export default Home;
+```
+
+Now all we need is some CSS. Edit `examples/hello_world/web-nextjs/src/pages/_document.tsx` to look like this:
+
+```typescript
+import { Html, Head, Main, NextScript } from "next/document";
+
+export default function Document() {
+  return (
+    <Html>
+      <Head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+        />
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  );
+}
+```
+
+## Build and serve our app
+
+We can build our app, and serve it for the browser, in one simple step.
+
+```sh
+pnpm dev
+```
+
+```admonish success
+Your app should look like this:
+
+<p align="center"><img alt="hello world app" src="./hello_world_nextjs.webp"  width="300"></p>
+```

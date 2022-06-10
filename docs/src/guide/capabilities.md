@@ -39,4 +39,22 @@ fn update(&self, msg: Self::Event, model: &mut Self::Model, caps: &Self::Capabil
 
 We get the capabilities in the `caps` argument. You may be wondering why that's necessary. At first glance, we could be able to just create a capability instance ourselves, or not need one at all, after all they just provide API to make effects. There are a few reasons.
 
-Firstly, capabilities need to be able to send a message to the shell, more precisely, they need to be able to add to the set of effects which result from the run of the update function. Sounds like a return value to you? It kind of is, and we tried that, and the type signatures involved quickly become quite unsightly. It's not the only reason though. They also need t
+Firstly, capabilities need to be able to send a message to the shell, more precisely, they need to be able to add to the set of effects which result from the run of the update function. Sounds like a return value to you? It kind of is, and we tried that, and the type signatures involved quickly become quite unsightly. It's not the only reason though. They also need to be able to return information back to your app by queuing up events to be dispatched to the next run of the `update` function. But to be _really_ useful, they need to be able to do a series of these things and suspend their execution in the meantime.
+
+In order to enable all that, Crux needs to be in charge of creating the instance of the capabilities to provide context to them, which they use to do the things we just listed. We'll see the details of this in the next chapter.
+
+Notice that the type of the argument is `Self::Capabilities` — you own the type. This is to allow you to declare which capabilities you want to use in your app. That type will most likely be a struct looking like the following:
+
+```rust,noplayground
+#[derive(Effect)]
+pub struct Capabilities {
+    pub http: Http<Event>,
+    pub render: Render<Event>,
+}
+```
+
+Those two types come from `crux_core` and `crux_http`. Two things are suspicious about the above — the `Event` type, which describes your app's events and the `#[derive(Effect)]` derive macro.
+
+The latter generates an `Effect` enum for you, used as the payload of the messages to the Shell. It is one of the things you will need to expose via the FFI boundary. It's the type the Shell will use to understand what is being requested from it, and it mirrors the `Capabilities` struct: for each field, there is a tuple variant in the Effect enum, with the respective capability's _request_ as payload, i.e. the data describing what's being asked of the Shell.
+
+The `Event` type argument enables the "shell side" of these capabilities to send you your specific eve

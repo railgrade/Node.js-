@@ -57,4 +57,39 @@ Those two types come from `crux_core` and `crux_http`. Two things are suspicious
 
 The latter generates an `Effect` enum for you, used as the payload of the messages to the Shell. It is one of the things you will need to expose via the FFI boundary. It's the type the Shell will use to understand what is being requested from it, and it mirrors the `Capabilities` struct: for each field, there is a tuple variant in the Effect enum, with the respective capability's _request_ as payload, i.e. the data describing what's being asked of the Shell.
 
-The `Event` type argument enables the "shell side" of these capabilities to send you your specific eve
+The `Event` type argument enables the "shell side" of these capabilities to send you your specific events back as the _outcome_ of their work. Typically, you'd probably set up an `Event` variant specifically for the individual uses of each capability, like this:
+
+```rust,noplayground
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+pub enum Event {
+    Hello,
+    #[serde(skip)]
+    Set(crux_http::Result<crux_http::Response<Counter>>), // <- this
+}
+```
+
+In a real app, you'd likely have more than one interaction with a HTTP server, and would most likely need one variant for each. (`#[serde(skip)]` in the above code hides the variant from the type exposed to the Shell for direct calls – this event should not be dispatched directly. The other reason for it also has to do with serialization difficulties, which we'll eventually iron out).
+
+That's it for linking the capability into our app, now we can use it in the `update` function:
+
+```rust,noplayground
+    fn update(&self, msg: Self::Event, model: &mut Self::Model, caps: &Self::Capabilities) {
+        match msg {
+            Event::Get => {
+                caps.http
+                    .get(API_URL)
+                    .expect_json::<Counter>()
+                    .send(Event::Set);
+
+                caps.render.render();
+            }
+    // ...
+```
+
+You can see the use of the `Event::Set` variant we just discussed. `Event::Set` is technically a function with this signature:
+
+```rust,noplayground
+fn Event::Set(crux_http::Result<crux_http::Response<Counter>) -> Event
+```
+
+Looks a lot like a callback, doesn't it. Yep. With the difference that the result is an `Event`. Generally, you shou

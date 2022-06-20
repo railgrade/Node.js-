@@ -99,4 +99,55 @@ We'll start with a few simple types for events, model and view model.
 
 Now we can finally implement the trait with its two methods, `update` and `view`.
 
-```rust,nop
+```rust,noplayground
+use crux_core::{render::Render, App};
+use crux_macros::Effect;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+pub enum Event {
+    None,
+}
+
+#[derive(Default)]
+pub struct Model;
+
+#[derive(Serialize, Deserialize)]
+pub struct ViewModel {
+    data: String,
+}
+
+#[derive(Effect)]
+#[effect(app = "Hello")]
+pub struct Capabilities {
+    render: Render<Event>,
+}
+
+#[derive(Default)]
+pub struct Hello;
+
+impl App for Hello {
+    type Event = Event;
+    type Model = Model;
+    type ViewModel = ViewModel;
+    type Capabilities = Capabilities;
+
+    fn update(&self, _event: Self::Event, _model: &mut Self::Model, caps: &Self::Capabilities) {
+        caps.render.render();
+    }
+
+    fn view(&self, _model: &Self::Model) -> Self::ViewModel {
+        ViewModel {
+            data: "Hello World".to_string(),
+        }
+    }
+}
+```
+
+The `update` function is the heart of the app. It responds to events by (optionally) updating the state and requesting some effects by using the capability's APIs.
+
+All our `update` function does is ignore all its arguments and ask the Shell to render the screen. It's a hello world after all.
+
+The `view` function returns the representation of what we want the Shell to show on screen. And true to form, it returns an instance of the `ViewModel` struct containing `Hello World!`.
+
+That's a working hello world done, lets try it. As we said at the beginning, for now we'll do it from tests. It may sound like a concession, but in fact, this is the intended way for apps to be de

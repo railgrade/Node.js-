@@ -36,4 +36,33 @@ One of the key design choices in Crux is that the Core is free of side-effects (
 
 This makes the core portable between platforms, and, importantly, really easy to test. It also separates the intent, the "functional" requirements, from the implementation of the side-effects and the "non-functional" requirements (NFRs). For example, your application knows it wants to store data in a SQL database, but it doesn't need to know or care whether that database is local or remote. That decision can even change as the application evolves, and be different on each platform. If you want to understand this better before we carry on, you can read a lot more about how side-effects work in Crux in the chapter on [capabilities](./capabilities.md).
 
-To _ask_ the Shell for side effects, it will need to know what side effects it needs to handle, so we will need to declare them (as an enum). _Effects_ are simply messages describing what should happen, and for more complex side-effects (e.g. HTTP), they would be too unwieldy to create by hand, so to help us create them, Crux provides _capabilities_ - reusable libraries which give us a nice A
+To _ask_ the Shell for side effects, it will need to know what side effects it needs to handle, so we will need to declare them (as an enum). _Effects_ are simply messages describing what should happen, and for more complex side-effects (e.g. HTTP), they would be too unwieldy to create by hand, so to help us create them, Crux provides _capabilities_ - reusable libraries which give us a nice API for requesting side-effects. We'll look at them in a lot more detail later.
+
+Let's start with the basics:
+
+```rust,noplayground
+use crux_core::render::Render;
+
+pub struct Capabilities {
+    render: Render<Event>,
+}
+```
+
+As you can see, for now, we will use a single capability, `Render`, which is built into Crux and available from the `crux_core` crate. It simply tells the shell to update the screen using the latest information.
+
+That means the core can produce a single `Effect`. It will soon be more than one, so we'll wrap it in an enum to give ourselves space. The `Effect` enum corresponds one to one to the `Capabilities` we're using, and rather than typing it (and its associated trait implementations) by hand and open ourselves to unnecessary mistakes, we can use the `Effect` derive macro from the `crux_macros` crate.
+
+```rust,noplayground
+use crux_core::{render::Render};
+use crux_macros::Effect;
+
+#[derive(Effect)]
+#[effect(app = "Hello")]
+pub struct Capabilities {
+    render: Render<Event>,
+}
+```
+
+Other than the `derive` itself, we also need to link the effect to our app. We'll go into the detail of why that is in the [Capabilities](capabilities.md) section, but the basic reason is that capabilities need to be able to send the app the outcomes of their work.
+
+You probably also noticed the `Event` type which capabilities are generic over, because they need to know the type which defines messages they can send back to the app. The same type is also used by the Shell to forward any user interactions to the Core, and in order to pass across the FFI boundary, it nee

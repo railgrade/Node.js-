@@ -65,4 +65,38 @@ pub struct Capabilities {
 
 Other than the `derive` itself, we also need to link the effect to our app. We'll go into the detail of why that is in the [Capabilities](capabilities.md) section, but the basic reason is that capabilities need to be able to send the app the outcomes of their work.
 
-You probably also noticed the `Event` type which capabilities are generic over, because they need to know the type which defines messages they can send back to the app. The same type is also used by the Shell to forward any user interactions to the Core, and in order to pass across the FFI boundary, it nee
+You probably also noticed the `Event` type which capabilities are generic over, because they need to know the type which defines messages they can send back to the app. The same type is also used by the Shell to forward any user interactions to the Core, and in order to pass across the FFI boundary, it needs to be serializable. The resulting code will end up looking like this:
+
+```rust,noplayground
+use crux_core::{render::Render, App};
+use crux_macros::Effect;
+use serde::{Deserialize, Serialize};
+
+#[derive(Effect)]
+#[effect(app = "Hello")]
+pub struct Capabilities {
+    render: Render<Event>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Event {
+    None, // we can't instantiate an empty enum, so let's have a dummy variant for now
+}
+
+#[derive(Default)]
+pub struct Hello;
+
+impl App for Hello { ... }
+```
+
+Okay, that took a little bit of effort, but with this short detour out of the way and foundations in place, we can finally create an app and start implementing some behavior.
+
+## Implementing the `App` trait
+
+We now have almost all the building blocks to implement the `App` trait. We're just missing two simple types. First, a `Model` to keep our app's state, it makes sense to make that a struct. It needs to implement `Default`, which gives us an opportunity to set up any initial state the app might need. Second, we need a `ViewModel`, which is a representation of what the user should see on screen. It might be tempting to represent the state and the view with the same type, but in more complicated cases it will be too constraining, and probably non-obvious what data are for internal bookkeeping and what should end up on screen, so Crux separates the concepts. Nothing stops you using the same type for both `Model` and `ViewModel` if your app is simple enough.
+
+We'll start with a few simple types for events, model and view model.
+
+Now we can finally implement the trait with its two methods, `update` and `view`.
+
+```rust,nop

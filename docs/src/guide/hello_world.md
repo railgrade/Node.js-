@@ -150,4 +150,39 @@ All our `update` function does is ignore all its arguments and ask the Shell to 
 
 The `view` function returns the representation of what we want the Shell to show on screen. And true to form, it returns an instance of the `ViewModel` struct containing `Hello World!`.
 
-That's a working hello world done, lets try it. As we said at the beginning, for now we'll do it from tests. It may sound like a concession, but in fact, this is the intended way for apps to be de
+That's a working hello world done, lets try it. As we said at the beginning, for now we'll do it from tests. It may sound like a concession, but in fact, this is the intended way for apps to be developed with Crux - from inside out, with unit tests, focusing on behavior first and presentation later, roughly corresponding to doing the user experience first, then the visual design.
+
+Here's our test:
+
+```rust,noplayground
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crux_core::{render::RenderOperation, testing::AppTester};
+
+    #[test]
+    fn hello_says_hello_world() {
+        let hello = AppTester::<Hello, _>::default();
+        let mut model = Model::default();
+
+        // Call 'update' and request effects
+        let update = hello.update(Event::None, &mut model);
+
+        // Check update asked us to `Render`
+        let actual_effect = &update.effects[0];
+        let expected_effect = &Effect::Render(RenderOperation);
+        assert_eq!(actual_effect, expected_effect);
+
+        // Make sure the view matches our expectations
+        let actual_view = &hello.view(&mut model);
+        let expected_view = "Hello World";
+        assert_eq!(actual_view, expected_view);
+    }
+}
+```
+
+It is a fairly underwhelming test, but it should pass (check with `cargo test`). The test uses a testing helper from `crux_core::testing` that lets us easily interact with the app, inspect the effects it requests and its state, without having to set up the machinery every time. It's not exactly complicated, but it's a fair amount of boiler plate code.
+
+## Counting up and down
+
+Let's make things more interesting and add some behaviour. We'll teach the app to count up and down. First, we'll need a model, which represents the state. We could just make our model a number, but we'll go with a struct instead, so that we 

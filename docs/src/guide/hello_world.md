@@ -185,4 +185,68 @@ It is a fairly underwhelming test, but it should pass (check with `cargo test`).
 
 ## Counting up and down
 
-Let's make things more interesting and add some behaviour. We'll teach the app to count up and down. First, we'll need a model, which represents the state. We could just make our model a number, but we'll go with a struct instead, so that we 
+Let's make things more interesting and add some behaviour. We'll teach the app to count up and down. First, we'll need a model, which represents the state. We could just make our model a number, but we'll go with a struct instead, so that we can easily add more state later.
+
+```rust,noplayground
+#[derive(Default)]
+struct Model {
+    count: isize,
+}
+```
+
+We need `Default` implemented to define the initial state. For now we derive it, as our state is quite simple. We also update the app to show the current count:
+
+```rust,noplayground
+impl App for Hello {
+// ...
+
+    type Model = Model;
+
+// ...
+
+    fn view(&self, model: &Self::Model) -> Self::ViewModel {
+        format!("Count is: {}", model.count)
+    }
+}
+```
+
+We'll also need a simple `ViewModel` struct to hold the data that the Shell will render.
+
+```rust,noplayground
+#[derive(Serialize, Deserialize)]
+pub struct ViewModel {
+    count: String,
+}
+```
+
+Great. All that's left is adding the behaviour. That's where `Event` comes in:
+
+```rust,noplayground
+#[derive(Serialize, Deserialize)]
+enum Event {
+    Increment,
+    Decrement,
+    Reset,
+}
+```
+
+The event type covers all the possible events the app can respond to. "Will that not get massive really quickly??" I hear you ask. Don't worry about that, there is [a nice way to make this scale](./composing.md) and get reuse as well. Let's carry on. We need to actually handle those messages.
+
+```rust,noplayground
+impl App for Hello {
+    type Event = Event;
+    type Model = Model;
+    type ViewModel = ViewModel;
+    type Capabilities = Capabilities;
+
+    fn update(&self, event: Self::Event, model: &mut Self::Model, caps: &Self::Capabilities) {
+        match event {
+            Event::Increment => model.count += 1,
+            Event::Decrement => model.count -= 1,
+            Event::Reset => model.count = 0,
+        };
+
+        caps.render.render();
+    }
+
+    fn 

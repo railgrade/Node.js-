@@ -348,4 +348,51 @@ Hopefully those all pass. We are now sure that when we build an actual UI for th
 
 In more complicated cases, it might be helpful to inspect the `model` directly. It's up to you to make the call of which one is more appropriate, in some sense it's the difference between black-box and white-box testing, so you should probably be doing both to get the confidence you need that your app is working.
 
-## Remote 
+## Remote API
+
+Before we dive into the thinking behind the architecture, let's add one more feature - a remote API call - to get a better feel for how side-effects and capabilities work.
+
+We'll add a simple integration with a counter API we've prepared at <https://crux-counter.fly.dev>. All it does is count up an down like our local counter. It supports three requests
+
+- `GET /` returns the current count
+- `POST /inc` increments the counter
+- `POST /dec` decrements the counter
+
+All three API calls return the state of the counter in JSON, which looks something like this
+
+```json
+{
+  "value": 34,
+  "updated_at": 1673265904973
+}
+```
+
+We can represent that with a struct and use Serde for the serialization, and we'll need to update the model as well. We'll also update the count optimistically and keep track of when the server confirmed it (there are other ways to model these semantics, but let's keep it straightforward for now).
+
+```rust,noplayground
+#[derive(Default)]
+pub struct Model {
+    count: Counter,
+    confirmed: Option<bool>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq)]
+pub struct Counter {
+    value: isize,
+    updated_at: i64,
+}
+```
+
+We also need to update the view function to display the new data. To work with the date, we'll use `chrono`
+
+```rust,noplayground
+use chrono::{DateTime, NaiveDateTime, Utc};
+
+...
+
+fn view(&self, model: &Self::Model) -> Self::ViewModel {
+    let updated_at = DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp_millis(model.count.updated_at).unwrap(),
+        Utc,
+    );
+  

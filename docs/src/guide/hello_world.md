@@ -304,4 +304,48 @@ mod test {
     #[test]
     fn decrements_count() {
         let app = AppTester::<Hello, _>::default();
-        let 
+        let mut model = Model::default();
+
+        app.update(Event::Decrement, &mut model);
+
+        let actual_view = app.view(&mut model);
+        let expected_view = "Count is: -1";
+        assert_eq!(actual_view, expected_view);
+    }
+
+    #[test]
+    fn resets_count() {
+        let app = AppTester::<Hello, _>::default();
+        let mut model = Model::default();
+
+        app.update(Event::Increment, &mut model);
+        app.update(Event::Reset, &mut model);
+
+        let actual_view = app.view(&mut model);
+        let expected_view = "Count is: 0";
+        assert_eq!(actual_view, expected_view);
+    }
+
+    #[test]
+    fn counts_up_and_down() {
+        let app = AppTester::<Hello, _>::default();
+        let mut model = Model::default();
+
+        app.update(Event::Increment, &mut model);
+        app.update(Event::Reset, &mut model);
+        app.update(Event::Decrement, &mut model);
+        app.update(Event::Increment, &mut model);
+        app.update(Event::Increment, &mut model);
+
+        let actual_view = app.view(&mut model);
+        let expected_view = "Count is: 1";
+        assert_eq!(actual_view, expected_view);
+    }
+}
+```
+
+Hopefully those all pass. We are now sure that when we build an actual UI for this, it will _work_, and we'll be able to focus on making it looking delightful.
+
+In more complicated cases, it might be helpful to inspect the `model` directly. It's up to you to make the call of which one is more appropriate, in some sense it's the difference between black-box and white-box testing, so you should probably be doing both to get the confidence you need that your app is working.
+
+## Remote 

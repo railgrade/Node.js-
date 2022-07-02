@@ -249,4 +249,59 @@ impl App for Hello {
         caps.render.render();
     }
 
-    fn 
+    fn view(&self, model: &Self::Model) -> Self::ViewModel {
+        ViewModel {
+            count: format!("Count is: {}", model.count),
+        }
+    }
+}
+// ...
+```
+
+Pretty straightforward, we just do what we're told, update the state, and then tell the Shell to render. Lets update the tests to check everything works as expected.
+
+```rust,noplayground
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crux_core::{render::RenderOperation, testing::AppTester};
+
+    #[test]
+    fn renders() {
+        let app = AppTester::<Hello, _>::default();
+        let mut model = Model::default();
+
+        let update = app.update(Event::Reset, &mut model);
+
+        // Check update asked us to `Render`
+        let actual_effect = &update.effects[0];
+        let expected_effect = &Effect::Render(RenderOperation);
+        assert_eq!(actual_effect, expected_effect);
+    }
+
+    #[test]
+    fn shows_initial_count() {
+        let app = AppTester::<Hello, _>::default();
+        let mut model = Model::default();
+
+        let actual_view = app.view(&mut model);
+        let expected_view = "Count is: 0";
+        assert_eq!(actual_view, expected_view);
+    }
+
+    #[test]
+    fn increments_count() {
+        let app = AppTester::<Hello, _>::default();
+        let mut model = Model::default();
+
+        app.update(Event::Increment, &mut model);
+
+        let actual_view = app.view(&mut model);
+        let expected_view = "Count is: 1";
+        assert_eq!(actual_view, expected_view);
+    }
+
+    #[test]
+    fn decrements_count() {
+        let app = AppTester::<Hello, _>::default();
+        let 

@@ -461,4 +461,39 @@ pub enum Event {
 }
 ```
 
-We decorate the `Set` variant with `#[serde(skip)]` for two reasons: one, there's currently a technical li
+We decorate the `Set` variant with `#[serde(skip)]` for two reasons: one, there's currently a technical limitation stopping us easily serializing `crux_http::Response`, and two, there's no reason that variant should ever be sent by the Shell across the FFI boundary, which is the reason for the need to serialize in the first place — in a way, it is private to the Core.
+
+Finally, let's get rid of those TODOs. We'll need to add crux_http in the `Capabilities` type, so that the `update` function has access to it:
+
+```rust,noplayground
+use crux_http::Http;
+
+#[derive(Effect)]
+pub struct Capabilities {
+    pub http: Http<Event>,
+    pub render: Render<Event>,
+}
+```
+
+This may seem like needless boilerplate, but it allows us to only use the capabilities we need and, more importantly, allow capabilities to be built by anyone. Later on, we'll also see that Crux apps [compose](composing.md), relying on each app's `Capabilities` type to declare its needs, and making sure the necessary capabilities exist in the parent app.
+
+We can now implement those TODOs, so lets do it.
+
+```rust,noplayground
+const API_URL: &str = "https://crux-counter.fly.dev";
+
+...
+
+fn update(&self, event: Self::Event, model: &mut Self::Model, caps: &Self::Capabilities) {
+        match event {
+            Event::Get => {
+                caps.http
+                    .get(API_URL)
+                    .expect_json::<Counter>()
+                    .send(Event::Set);
+            }
+            Event::Set(Ok(mut counter)) => {
+                model.count = counter.take_body().unwrap();
+                model.confirmed = Some(true);
+                caps.render.render();
+   

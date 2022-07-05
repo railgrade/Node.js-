@@ -496,4 +496,37 @@ fn update(&self, event: Self::Event, model: &mut Self::Model, caps: &Self::Capab
                 model.count = counter.take_body().unwrap();
                 model.confirmed = Some(true);
                 caps.render.render();
-   
+            }
+            Event::Set(Err(_)) => {
+                panic!("Oh no something went wrong");
+            }
+            Event::Increment => {
+                // optimistic update
+                model.count.value += 1;
+                model.confirmed = Some(false);
+                caps.render.render();
+
+                // real update
+                let base = Url::parse(API_URL).unwrap();
+                let url = base.join("/inc").unwrap();
+                caps.http.post(url.as_str()).expect_json().send(Event::Set);
+            }
+            Event::Decrement => {
+                // optimistic update
+                model.count.value -= 1;
+                model.confirmed = Some(false);
+                caps.render.render();
+
+                // real update
+                let base = Url::parse(API_URL).unwrap();
+                let url = base.join("/dec").unwrap();
+                caps.http.post(url.as_str()).expect_json().send(Event::Set);
+            }
+        }
+    }
+
+```
+
+There's a few things of note. The first one is that the `.send` API at the end of each chain of calls to `crux_http` expects a function that wraps its argument (a `Result` of a http response) in a variant of `Event`. Fortunately, enum tuple variants create just such a function, and we can use it. The way to read the call is "Send a get request, parse the response as JSON, which should be deserialized as a `Counter`, and then call me again with `Event::Set` carrying the result".
+
+The other thing of note is that the capability calls don't block. They queue

@@ -414,4 +414,51 @@ We now have everything in place to update the `update` function. Let's start wit
 That gives us the following update function, with some placeholders:
 
 ```rust,noplayground
-fn update(&self, event: Self::Event, mode
+fn update(&self, event: Self::Event, model: &mut Self::Model, caps: &Self::Capabilities) {
+    match event {
+        Event::Get => {
+            // TODO "GET /"
+        }
+        Event::Set(_response) => {
+            // TODO Get the data and update the model
+            model.confirmed = Some(true);
+            caps.render.render();
+        }
+        Event::Increment => {
+            // optimistic update
+            model.count.value += 1;
+            model.confirmed = Some(false);
+            caps.render.render();
+
+            // real update
+            // TODO "POST /inc"
+        }
+        Event::Decrement => {
+            // optimistic update
+            model.count.value -= 1;
+            model.confirmed = Some(false);
+            caps.render.render();
+
+            // real update
+            // TODO "POST /dec"
+        }
+    }
+}
+```
+
+To request the respective HTTP calls, we'll use [`crux_http`](https://github.com/redbadger/crux/tree/master/crux_http) the built-in HTTP client. Since this is the first capability we're using, some things won't be immediately clear, but we should get there by the end of this chapter.
+
+The first thing to know is that the HTTP responses will be sent back to the update function as an event. That's what the `Event::Set` is for. The `Event` type looks as follows:
+
+```rust,noplayground
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+pub enum Event {
+    Get,
+    #[serde(skip)]
+    Set(crux_http::Result<crux_http::Response<Counter>>),
+    Increment,
+    Decrement,
+}
+```
+
+We decorate the `Set` variant with `#[serde(skip)]` for two reasons: one, there's currently a technical li

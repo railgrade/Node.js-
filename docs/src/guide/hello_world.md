@@ -395,4 +395,23 @@ fn view(&self, model: &Self::Model) -> Self::ViewModel {
         NaiveDateTime::from_timestamp_millis(model.count.updated_at).unwrap(),
         Utc,
     );
-  
+    let suffix = match model.confirmed {
+        Some(true) => format!(" ({})", updated_at),
+        Some(false) => " (pending)".to_string(),
+        None => "Loading...".to_string(),
+    };
+
+    format!("{}{}", model.count.value.to_string(), &suffix)
+}
+```
+
+You can see that the view function caters to three states - not knowing the count, having set a count but not having it confirmed, and having the count confirmed by the server.
+
+In a real-world app, it's likely that this information would be captured in a struct rather than converted to string inside the core, so that the UI can decide how to present it. The date formatting, however, is an example of something you may want to do consistently across all platforms and keep inside the Core. When making these choices, think about who's decisions they are, and do they need to be consistent across platforms or flexible. You will no doubt get a number of those calls wrong, but that's ok, the type system is here to help you refactor later and update the shells to work with the changes.
+
+We now have everything in place to update the `update` function. Let's start with thinking about the events. The API does not support resetting the counter, so that variant goes, but we need a new one to kick off fetching the current state of the counter. The Core itself can't autonomously start anything, it is always driven by the Shell, either by the user via the UI, or as a result of a side-effect.
+
+That gives us the following update function, with some placeholders:
+
+```rust,noplayground
+fn update(&self, event: Self::Event, mode

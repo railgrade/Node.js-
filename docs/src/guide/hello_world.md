@@ -529,4 +529,52 @@ fn update(&self, event: Self::Event, model: &mut Self::Model, caps: &Self::Capab
 
 There's a few things of note. The first one is that the `.send` API at the end of each chain of calls to `crux_http` expects a function that wraps its argument (a `Result` of a http response) in a variant of `Event`. Fortunately, enum tuple variants create just such a function, and we can use it. The way to read the call is "Send a get request, parse the response as JSON, which should be deserialized as a `Counter`, and then call me again with `Event::Set` carrying the result".
 
-The other thing of note is that the capability calls don't block. They queue
+The other thing of note is that the capability calls don't block. They queue up requests to send to the shell and execution continues immediately. The requests will be sent in the order they were queued and the asynchronous execution is the job of the shell.
+
+You can find the the complete example, including the shell implementations [in the Crux repo](https://github.com/redbadger/crux/blob/master/examples/counter/). It's interesting to take a closer look at the unit tests
+
+```rust,noplayground
+#[test]
+fn get_counter() {
+    let app = AppTester::<App, _>::default();
+    let mut model = Model::default();
+
+    let update = app.update(Event::Get, &mut model);
+
+    let actual = &update.effects[0];
+    let expected = &Effect::Http(HttpRequest {
+        method: "GET".to_string(),
+        url: "https://crux-counter.fly.dev/".to_string(),
+    });
+    assert_eq!(actual, expected);
+
+    let update = update.effects[0].resolve(&HttpResponse {
+        status: 200,
+        body: serde_json::to_vec(&Counter {
+            value: 1,
+            updated_at: 1,
+        })
+        .unwrap(),
+    });
+
+    let actual = update.events;
+    let expected = vec![Event::new_set(1, 1)];
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn set_counter() {
+    let app = AppTester::<App, _>::default();
+    let mut model = Model::default();
+
+    let update = app.update(Event::new_set(1, 1), &mut model);
+
+    let actual = &update.effects[0];
+    let expected = &Effect::Render(RenderOperation);
+    assert_eq!(actual, expected);
+
+    let actual = model.count.value;
+    let expected = 1;
+    assert_eq!(actual, expected);
+
+    let actual =

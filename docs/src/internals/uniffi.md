@@ -1,4 +1,4 @@
-# Type generation
+# FFI interface
 
 ```admonish info
 Coming soon.

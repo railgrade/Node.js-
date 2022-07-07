@@ -577,4 +577,12 @@ fn set_counter() {
     let expected = 1;
     assert_eq!(actual, expected);
 
-    let actual =
+    let actual = model.confirmed;
+    let expected = Some(true);
+    assert_eq!(actual, expected);
+}
+```
+
+You can see how easy it is to check that the app is requesting the right side effects, with the right arguments, and even test a chain of interactions and make sure the behavior is correct, all without mocking or stubbing anything or worrying about `async` code.
+
+In the next chapter, we can put the example into perspective and discuss the architecture it follows, inspired by Elm.

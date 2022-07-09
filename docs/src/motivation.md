@@ -20,4 +20,10 @@ In short, upgrading JavaScript to something modern takes a lot of tooling. Getti
 
 It's no wonder that even a working setup of all the tooling has sharp edges, and cannot afford to be nearly as strict as tooling designed with strictness in mind, such as Rust's. The heart of the problem is that computers are strict and precise instruments, and humans are sloppy creatures. With enough humans (more than 10, being generous) and no additional help, the resulting code will be sloppy, full of unhandled edge cases, undefined behaviour being relied on, circular dependencies preventing testing in isolation, etc. (and yes, these are not hypotheticals).
 
-Contrast that with Rust, which is as strict as it gets, and generally backs up the claim that if it compiles it will work (and if you struggle to get it past the compiler, 
+Contrast that with Rust, which is as strict as it gets, and generally backs up the claim that if it compiles it will work (and if you struggle to get it past the compiler, it's probably a bad idea). The tooling and package management is built in with `cargo`. There are fewer decisions to make when setting up a Rust project.
+
+In short, we think the JS ecosystem has jumped the shark, the complexity toothpaste is out of the tube, and it's time to stop. But there's no real viable alternative. Crux is our attempt to provide one.
+
+---
+
+[^once]: In reality it's more like 1.4x effort build the same app for two platforms.

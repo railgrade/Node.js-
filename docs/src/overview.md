@@ -40,4 +40,8 @@ Updating the user interface is considered one of the side-effects the Core can r
 We set out to prove this architecture to find a better way of building apps across platforms. You can read more [about our motivation](./motivation.md). The overall goals of Crux are to:
 
 - Build the majority of the application code once, in Rust
-- Follow the [Onion Architecture](https://jeffreypalermo.com/2008/07/the-onion-arc
+- Follow the [Onion Architecture](https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/) to get all its benefits
+- Encapsulate the _behaviour_ of the app in the Core for reuse
+- Separate the behaviour from the look and feel and interaction design
+- Push side-effects to the edge, to make the behaviour of the Core easy to test
+- Use the native UI tool kits to create user experience that is the best fit for a given platform

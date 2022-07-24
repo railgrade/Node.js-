@@ -30,4 +30,47 @@ public final class CatFact {
         Builder builder = new Builder();
         builder.fact = deserializer.deserialize_str();
         builder.length = deserializer.deserialize_i32();
-   
+        deserializer.decrease_container_depth();
+        return builder.build();
+    }
+
+    public static CatFact bcsDeserialize(byte[] input) throws com.novi.serde.DeserializationError {
+        if (input == null) {
+             throw new com.novi.serde.DeserializationError("Cannot deserialize null array");
+        }
+        com.novi.serde.Deserializer deserializer = new com.novi.bcs.BcsDeserializer(input);
+        CatFact value = deserialize(deserializer);
+        if (deserializer.get_buffer_offset() < input.length) {
+             throw new com.novi.serde.DeserializationError("Some input bytes were not read");
+        }
+        return value;
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        CatFact other = (CatFact) obj;
+        if (!java.util.Objects.equals(this.fact, other.fact)) { return false; }
+        if (!java.util.Objects.equals(this.length, other.length)) { return false; }
+        return true;
+    }
+
+    public int hashCode() {
+        int value = 7;
+        value = 31 * value + (this.fact != null ? this.fact.hashCode() : 0);
+        value = 31 * value + (this.length != null ? this.length.hashCode() : 0);
+        return value;
+    }
+
+    public static final class Builder {
+        public String fact;
+        public Integer length;
+
+        public CatFact build() {
+            return new CatFact(
+                fact,
+                length
+            );
+        }
+    }

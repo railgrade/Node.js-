@@ -36,4 +36,33 @@ public final class CatImage {
         com.novi.serde.Deserializer deserializer = new com.novi.bcs.BcsDeserializer(input);
         CatImage value = deserialize(deserializer);
         if (deserializer.get_buffer_offset() < input.length) {
-             throw new com.
+             throw new com.novi.serde.DeserializationError("Some input bytes were not read");
+        }
+        return value;
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        CatImage other = (CatImage) obj;
+        if (!java.util.Objects.equals(this.file, other.file)) { return false; }
+        return true;
+    }
+
+    public int hashCode() {
+        int value = 7;
+        value = 31 * value + (this.file != null ? this.file.hashCode() : 0);
+        return value;
+    }
+
+    public static final class Builder {
+        public String file;
+
+        public CatImage build() {
+            return new CatImage(
+                file
+            );
+        }
+    }
+}

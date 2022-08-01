@@ -17,4 +17,39 @@ public abstract class Effect {
         }
     }
 
-  
+    public byte[] bcsSerialize() throws com.novi.serde.SerializationError {
+        com.novi.serde.Serializer serializer = new com.novi.bcs.BcsSerializer();
+        serialize(serializer);
+        return serializer.get_bytes();
+    }
+
+    public static Effect bcsDeserialize(byte[] input) throws com.novi.serde.DeserializationError {
+        if (input == null) {
+             throw new com.novi.serde.DeserializationError("Cannot deserialize null array");
+        }
+        com.novi.serde.Deserializer deserializer = new com.novi.bcs.BcsDeserializer(input);
+        Effect value = deserialize(deserializer);
+        if (deserializer.get_buffer_offset() < input.length) {
+             throw new com.novi.serde.DeserializationError("Some input bytes were not read");
+        }
+        return value;
+    }
+
+    public static final class Http extends Effect {
+        public final HttpRequest value;
+
+        public Http(HttpRequest value) {
+            java.util.Objects.requireNonNull(value, "value must not be null");
+            this.value = value;
+        }
+
+        public void serialize(com.novi.serde.Serializer serializer) throws com.novi.serde.SerializationError {
+            serializer.increase_container_depth();
+            serializer.serialize_variant_index(0);
+            value.serialize(serializer);
+            serializer.decrease_container_depth();
+        }
+
+        static Http load(com.novi.serde.Deserializer deserializer) throws com.novi.serde.DeserializationError {
+            deserializer.increase_container_depth();
+            Builder builde

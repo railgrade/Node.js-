@@ -52,4 +52,51 @@ public abstract class Effect {
 
         static Http load(com.novi.serde.Deserializer deserializer) throws com.novi.serde.DeserializationError {
             deserializer.increase_container_depth();
-            Builder builde
+            Builder builder = new Builder();
+            builder.value = HttpRequest.deserialize(deserializer);
+            deserializer.decrease_container_depth();
+            return builder.build();
+        }
+
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            Http other = (Http) obj;
+            if (!java.util.Objects.equals(this.value, other.value)) { return false; }
+            return true;
+        }
+
+        public int hashCode() {
+            int value = 7;
+            value = 31 * value + (this.value != null ? this.value.hashCode() : 0);
+            return value;
+        }
+
+        public static final class Builder {
+            public HttpRequest value;
+
+            public Http build() {
+                return new Http(
+                    value
+                );
+            }
+        }
+    }
+
+    public static final class KeyValue extends Effect {
+        public final KeyValueOperation value;
+
+        public KeyValue(KeyValueOperation value) {
+            java.util.Objects.requireNonNull(value, "value must not be null");
+            this.value = value;
+        }
+
+        public void serialize(com.novi.serde.Serializer serializer) throws com.novi.serde.SerializationError {
+            serializer.increase_container_depth();
+            serializer.serialize_variant_index(1);
+            value.serialize(serializer);
+            serializer.decrease_container_depth();
+        }
+
+   

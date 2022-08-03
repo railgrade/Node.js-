@@ -275,4 +275,9 @@ public abstract class Effect {
             public Time build() {
                 return new Time(
                     value
-  
+                );
+            }
+        }
+    }
+}
+

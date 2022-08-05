@@ -25,4 +25,40 @@ public final class HttpHeader {
         return serializer.get_bytes();
     }
 
-    public static HttpHeader deserialize(com.novi.serde.Deserializer deserializer) throws com.
+    public static HttpHeader deserialize(com.novi.serde.Deserializer deserializer) throws com.novi.serde.DeserializationError {
+        deserializer.increase_container_depth();
+        Builder builder = new Builder();
+        builder.name = deserializer.deserialize_str();
+        builder.value = deserializer.deserialize_str();
+        deserializer.decrease_container_depth();
+        return builder.build();
+    }
+
+    public static HttpHeader bcsDeserialize(byte[] input) throws com.novi.serde.DeserializationError {
+        if (input == null) {
+             throw new com.novi.serde.DeserializationError("Cannot deserialize null array");
+        }
+        com.novi.serde.Deserializer deserializer = new com.novi.bcs.BcsDeserializer(input);
+        HttpHeader value = deserialize(deserializer);
+        if (deserializer.get_buffer_offset() < input.length) {
+             throw new com.novi.serde.DeserializationError("Some input bytes were not read");
+        }
+        return value;
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        HttpHeader other = (HttpHeader) obj;
+        if (!java.util.Objects.equals(this.name, other.name)) { return false; }
+        if (!java.util.Objects.equals(this.value, other.value)) { return false; }
+        return true;
+    }
+
+    public int hashCode() {
+        int value = 7;
+        value = 31 * value + (this.name != null ? this.name.hashCode() : 0);
+        value = 31 * value + (this.value != null ? this.value.hashCode() : 0);
+        return value;
+   

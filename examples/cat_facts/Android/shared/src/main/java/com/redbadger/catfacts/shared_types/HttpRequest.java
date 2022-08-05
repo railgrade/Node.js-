@@ -30,4 +30,40 @@ public final class HttpRequest {
     }
 
     public static HttpRequest deserialize(com.novi.serde.Deserializer deserializer) throws com.novi.serde.DeserializationError {
-        deserializer.increase_container_de
+        deserializer.increase_container_depth();
+        Builder builder = new Builder();
+        builder.method = deserializer.deserialize_str();
+        builder.url = deserializer.deserialize_str();
+        builder.headers = TraitHelpers.deserialize_vector_HttpHeader(deserializer);
+        deserializer.decrease_container_depth();
+        return builder.build();
+    }
+
+    public static HttpRequest bcsDeserialize(byte[] input) throws com.novi.serde.DeserializationError {
+        if (input == null) {
+             throw new com.novi.serde.DeserializationError("Cannot deserialize null array");
+        }
+        com.novi.serde.Deserializer deserializer = new com.novi.bcs.BcsDeserializer(input);
+        HttpRequest value = deserialize(deserializer);
+        if (deserializer.get_buffer_offset() < input.length) {
+             throw new com.novi.serde.DeserializationError("Some input bytes were not read");
+        }
+        return value;
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        HttpRequest other = (HttpRequest) obj;
+        if (!java.util.Objects.equals(this.method, other.method)) { return false; }
+        if (!java.util.Objects.equals(this.url, other.url)) { return false; }
+        if (!java.util.Objects.equals(this.headers, other.headers)) { return false; }
+        return true;
+    }
+
+    public int hashCode() {
+        int value = 7;
+        value = 31 * value + (this.method != null ? this.method.hashCode() : 0);
+        value = 31 * value + (this.url != null ? this.url.hashCode() : 0);
+        value = 31

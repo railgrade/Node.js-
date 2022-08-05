@@ -61,4 +61,17 @@ public final class HttpHeader {
         value = 31 * value + (this.name != null ? this.name.hashCode() : 0);
         value = 31 * value + (this.value != null ? this.value.hashCode() : 0);
         return value;
-   
+    }
+
+    public static final class Builder {
+        public String name;
+        public String value;
+
+        public HttpHeader build() {
+            return new HttpHeader(
+                name,
+                value
+            );
+        }
+    }
+}

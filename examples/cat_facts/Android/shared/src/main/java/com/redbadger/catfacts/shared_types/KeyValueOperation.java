@@ -58,4 +58,46 @@ public abstract class KeyValueOperation {
         public boolean equals(Object obj) {
             if (this == obj) return true;
             if (obj == null) return false;
-            if (getClass() != obj.getClass()) return fals
+            if (getClass() != obj.getClass()) return false;
+            Read other = (Read) obj;
+            if (!java.util.Objects.equals(this.value, other.value)) { return false; }
+            return true;
+        }
+
+        public int hashCode() {
+            int value = 7;
+            value = 31 * value + (this.value != null ? this.value.hashCode() : 0);
+            return value;
+        }
+
+        public static final class Builder {
+            public String value;
+
+            public Read build() {
+                return new Read(
+                    value
+                );
+            }
+        }
+    }
+
+    public static final class Write extends KeyValueOperation {
+        public final String field0;
+        public final java.util.List<@com.novi.serde.Unsigned Byte> field1;
+
+        public Write(String field0, java.util.List<@com.novi.serde.Unsigned Byte> field1) {
+            java.util.Objects.requireNonNull(field0, "field0 must not be null");
+            java.util.Objects.requireNonNull(field1, "field1 must not be null");
+            this.field0 = field0;
+            this.field1 = field1;
+        }
+
+        public void serialize(com.novi.serde.Serializer serializer) throws com.novi.serde.SerializationError {
+            serializer.increase_container_depth();
+            serializer.serialize_variant_index(1);
+            serializer.serialize_str(field0);
+            TraitHelpers.serialize_vector_u8(field1, serializer);
+            serializer.decrease_container_depth();
+        }
+
+        static Write load(com.novi.serde.Deserializer deserial

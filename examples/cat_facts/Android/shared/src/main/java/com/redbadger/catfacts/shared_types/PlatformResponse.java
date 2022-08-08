@@ -34,4 +34,35 @@ public final class PlatformResponse {
              throw new com.novi.serde.DeserializationError("Cannot deserialize null array");
         }
         com.novi.serde.Deserializer deserializer = new com.novi.bcs.BcsDeserializer(input);
-        PlatformResp
+        PlatformResponse value = deserialize(deserializer);
+        if (deserializer.get_buffer_offset() < input.length) {
+             throw new com.novi.serde.DeserializationError("Some input bytes were not read");
+        }
+        return value;
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        PlatformResponse other = (PlatformResponse) obj;
+        if (!java.util.Objects.equals(this.value, other.value)) { return false; }
+        return true;
+    }
+
+    public int hashCode() {
+        int value = 7;
+        value = 31 * value + (this.value != null ? this.value.hashCode() : 0);
+        return value;
+    }
+
+    public static final class Builder {
+        public String value;
+
+        public PlatformResponse build() {
+            return new PlatformResponse(
+                value
+            );
+        }
+    }
+}

@@ -46,4 +46,12 @@ public final class TimeRequest {
     public int hashCode() {
         int value = 7;
         return value;
-  
+    }
+
+    public static final class Builder {
+        public TimeRequest build() {
+            return new TimeRequest(
+            );
+        }
+    }
+}

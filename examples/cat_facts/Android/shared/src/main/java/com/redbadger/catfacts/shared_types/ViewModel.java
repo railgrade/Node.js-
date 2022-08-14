@@ -46,4 +46,41 @@ public final class ViewModel {
         com.novi.serde.Deserializer deserializer = new com.novi.bcs.BcsDeserializer(input);
         ViewModel value = deserialize(deserializer);
         if (deserializer.get_buffer_offset() < input.length) {
- 
+             throw new com.novi.serde.DeserializationError("Some input bytes were not read");
+        }
+        return value;
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        ViewModel other = (ViewModel) obj;
+        if (!java.util.Objects.equals(this.fact, other.fact)) { return false; }
+        if (!java.util.Objects.equals(this.image, other.image)) { return false; }
+        if (!java.util.Objects.equals(this.platform, other.platform)) { return false; }
+        return true;
+    }
+
+    public int hashCode() {
+        int value = 7;
+        value = 31 * value + (this.fact != null ? this.fact.hashCode() : 0);
+        value = 31 * value + (this.image != null ? this.image.hashCode() : 0);
+        value = 31 * value + (this.platform != null ? this.platform.hashCode() : 0);
+        return value;
+    }
+
+    public static final class Builder {
+        public String fact;
+        public java.util.Optional<CatImage> image;
+        public String platform;
+
+        public ViewModel build() {
+            return new ViewModel(
+                fact,
+                image,
+                platform
+            );
+        }
+    }
+}

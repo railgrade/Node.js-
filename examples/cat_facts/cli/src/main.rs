@@ -22,4 +22,57 @@ enum CoreMessage {
 
 #[derive(Parser, Clone)]
 enum Command {
-    
+    Clear,
+    Get,
+    Fetch,
+}
+
+pub enum Outcome {
+    Platform(PlatformResponse),
+    Time(TimeResponse),
+    Http(HttpResponse),
+    KeyValue(KeyValueOutput),
+}
+
+/// Simple program to greet a person
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[command(subcommand)]
+    cmd: Command,
+}
+
+#[async_std::main]
+async fn main() -> Result<()> {
+    let args = Args::parse();
+
+    let mut queue: VecDeque<CoreMessage> = VecDeque::new();
+
+    queue.push_back(CoreMessage::Event(Event::Restore));
+    queue.push_back(CoreMessage::Event(Event::GetPlatform));
+
+    while !queue.is_empty() {
+        let msg = queue.pop_front();
+
+        let reqs = match msg {
+            Some(CoreMessage::Event(m)) => shared::process_event(&to_bytes(&m)?),
+            Some(CoreMessage::Response(uuid, output)) => shared::handle_response(
+                &uuid,
+                &match output {
+                    Outcome::Platform(x) => to_bytes(&x)?,
+                    Outcome::Time(x) => to_bytes(&x)?,
+                    Outcome::Http(x) => to_bytes(&x)?,
+                    Outcome::KeyValue(x) => to_bytes(&x)?,
+                },
+            ),
+            _ => vec![],
+        };
+        let reqs: Vec<Request<Effect>> = from_bytes(&reqs)?;
+
+        for req in reqs {
+            let Request { uuid, effect } = req;
+            match effect {
+                Effect::Render(_) => (),
+                Effect::Time(_) => {
+                    let now: DateTime<Utc> = SystemTime::now().into();
+            

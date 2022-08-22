@@ -108,4 +108,50 @@ async fn main() -> Result<()> {
                             Command::Fetch => CoreMessage::Event(Event::Fetch),
                         };
 
-                        queue.push_back(Cor
+                        queue.push_back(CoreMessage::Response(
+                            uuid,
+                            Outcome::KeyValue(KeyValueOutput::Read(bytes)),
+                        ));
+                        queue.push_back(initial_msg);
+                    }
+                    KeyValueOperation::Write(key, value) => {
+                        let success = write_state(&key, &value).await.is_ok();
+
+                        queue.push_back(CoreMessage::Response(
+                            uuid,
+                            Outcome::KeyValue(KeyValueOutput::Write(success)),
+                        ));
+                    }
+                },
+            }
+        }
+    }
+
+    let view = from_bytes::<ViewModel>(&shared::view())?;
+    println!("platform: {}", view.platform);
+    println!("{}", view.fact);
+
+    Ok(())
+}
+
+async fn write_state(_key: &str, bytes: &[u8]) -> Result<()> {
+    let mut f = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(".cat_facts")
+        .await?;
+
+    f.write_all(bytes).await?;
+
+    Ok(())
+}
+
+async fn read_state(_key: &str) -> Result<Vec<u8>> {
+    let mut f = File::open(".cat_facts").await?;
+    let mut buf: Vec<u8> = vec![];
+
+    f.read_to_end(&mut buf).await?;
+
+    Ok(buf)
+}

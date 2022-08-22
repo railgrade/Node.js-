@@ -75,4 +75,37 @@ async fn main() -> Result<()> {
                 Effect::Render(_) => (),
                 Effect::Time(_) => {
                     let now: DateTime<Utc> = SystemTime::now().into();
-            
+                    let iso_time = now.to_rfc3339();
+
+                    queue.push_back(CoreMessage::Response(
+                        uuid,
+                        Outcome::Time(TimeResponse(iso_time)),
+                    ));
+                }
+                Effect::Http(HttpRequest { url, .. }) => match surf::get(&url).recv_bytes().await {
+                    Ok(bytes) => {
+                        queue.push_back(CoreMessage::Response(
+                            uuid,
+                            Outcome::Http(HttpResponse {
+                                status: 200,
+                                body: bytes,
+                            }),
+                        ));
+                    }
+                    Err(e) => bail!("Could not HTTP GET from {}: {}", &url, e),
+                },
+                Effect::Platform(_) => queue.push_back(CoreMessage::Response(
+                    uuid,
+                    Outcome::Platform(PlatformResponse("cli".to_string())),
+                )),
+                Effect::KeyValue(request) => match request {
+                    KeyValueOperation::Read(key) => {
+                        let bytes = read_state(&key).await.ok();
+
+                        let initial_msg = match &args.cmd {
+                            Command::Clear => CoreMessage::Event(Event::Clear),
+                            Command::Get => CoreMessage::Event(Event::Get),
+                            Command::Fetch => CoreMessage::Event(Event::Fetch),
+                        };
+
+                        queue.push_back(Cor

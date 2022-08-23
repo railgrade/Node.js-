@@ -113,4 +113,29 @@ struct ContentView: View {
                             .scaledToFit()
                     } placeholder: {
                         EmptyView()
-                    
+                    }
+                    .frame(maxHeight: 250)
+                    .padding()
+                )
+            } ?? AnyView(EmptyView())
+            Text(model.view.fact).padding()
+            HStack {
+                ActionButton(label: "Clear", color: .red) {
+                    model.update(msg: .event(.clear))
+                }
+                ActionButton(label: "Get", color: .green) {
+                    model.update(msg: .event(.get))
+                }
+                ActionButton(label: "Fetch", color: .yellow) {
+                    model.update(msg: .event(.fetch))
+                }
+            }
+        }
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView(model: Model())
+    }
+}

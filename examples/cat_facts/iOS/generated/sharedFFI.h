@@ -48,4 +48,29 @@ typedef struct RustCallStatus {
 
 RustBuffer shared_2a51_process_event(
       RustBuffer msg,
-    RustCallStatus *_Nonn
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer shared_2a51_handle_response(
+      RustBuffer uuid,RustBuffer res,
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer shared_2a51_view(
+      
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer ffi_shared_2a51_rustbuffer_alloc(
+      int32_t size,
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer ffi_shared_2a51_rustbuffer_from_bytes(
+      ForeignBytes bytes,
+    RustCallStatus *_Nonnull out_status
+    );
+void ffi_shared_2a51_rustbuffer_free(
+      RustBuffer buf,
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer ffi_shared_2a51_rustbuffer_reserve(
+      RustBuffer buf,int32_t additional,
+    RustCallStatus *_Nonnull out_status
+    );

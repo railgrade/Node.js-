@@ -61,4 +61,56 @@ class Model: ObservableObject {
             case .platform(_):
                 update(msg: .response(req.uuid, .platform(PlatformResponse(value: get_platform()))))
             case .keyValue(.read):
-                update(msg: .response(req.uuid, .key_value(KeyValueOutpu
+                update(msg: .response(req.uuid, .key_value(KeyValueOutput.read(.none))))
+            case .keyValue(.write):
+                update(msg: .response(req.uuid, .key_value(KeyValueOutput.write(false))))
+            }
+        }
+    }
+}
+
+struct ActionButton: View {
+    var label: String
+    var color: Color
+    var action: () -> Void
+
+    init(label: String, color: Color, action: @escaping () -> Void) {
+        self.label = label
+        self.color = color
+        self.action = action
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .fontWeight(.bold)
+                .font(.body)
+                .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
+                .background(color)
+                .cornerRadius(10)
+                .foregroundColor(.white)
+                .padding()
+        }
+    }
+}
+
+struct ContentView: View {
+    @ObservedObject var model: Model
+
+    var body: some View {
+        VStack {
+            Image(systemName: "globe")
+                .imageScale(.large)
+                .foregroundColor(.accentColor)
+            Text(model.view.platform)
+            model.view.image.map { image in
+                AnyView(
+                    // For the loading image to work properly, we'd need to add
+                    // caching here
+                    AsyncImage(url: URL(string: image.file)) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    } placeholder: {
+                        EmptyView()
+                    

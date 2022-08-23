@@ -30,4 +30,16 @@ impl App for Platform {
     fn update(&self, msg: PlatformEvent, model: &mut Model, caps: &PlatformCapabilities) {
         match msg {
             PlatformEvent::Get => caps.platform.get(PlatformEvent::Set),
-   
+            PlatformEvent::Set(platform) => {
+                model.platform = platform.0;
+                caps.render.render()
+            }
+        }
+    }
+
+    fn view(&self, model: &Model) -> Model {
+        Model {
+            platform: model.platform.clone(),
+        }
+    }
+}

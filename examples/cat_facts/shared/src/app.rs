@@ -53,4 +53,63 @@ impl Default for CatImage {
 pub struct ViewModel {
     pub fact: String,
     pub image: Option<CatImage>,
-    pub platf
+    pub platform: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Event {
+    // events from the shell
+    None,
+    Clear,
+    Get,
+    Fetch,
+    GetPlatform,
+    Restore, // restore state
+
+    // events local to the core
+    Platform(PlatformEvent),
+    SetState(KeyValueOutput), // receive the data to restore state with
+    CurrentTime(TimeResponse),
+    #[serde(skip)]
+    SetFact(crux_http::Result<crux_http::Response<CatFact>>),
+    #[serde(skip)]
+    SetImage(crux_http::Result<crux_http::Response<CatImage>>),
+}
+
+#[derive(Default)]
+pub struct CatFacts {
+    platform: platform::Platform,
+}
+
+#[derive(Effect)]
+#[effect(app = "CatFacts")]
+pub struct CatFactCapabilities {
+    pub http: Http<Event>,
+    pub key_value: KeyValue<Event>,
+    pub platform: Platform<Event>,
+    pub render: Render<Event>,
+    pub time: Time<Event>,
+}
+
+// Allow easily using Platform as a submodule
+impl From<&CatFactCapabilities> for PlatformCapabilities {
+    fn from(incoming: &CatFactCapabilities) -> Self {
+        PlatformCapabilities {
+            platform: incoming.platform.map_event(super::Event::Platform),
+            render: incoming.render.map_event(super::Event::Platform),
+        }
+    }
+}
+
+impl App for CatFacts {
+    type Model = Model;
+    type Event = Event;
+    type ViewModel = ViewModel;
+    type Capabilities = CatFactCapabilities;
+
+    fn update(&self, msg: Event, model: &mut Model, caps: &CatFactCapabilities) {
+        match msg {
+            Event::GetPlatform => {
+                self.platform
+                    .update(PlatformEvent::Get, &mut model.platform, &caps.into())
+       

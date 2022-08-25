@@ -112,4 +112,47 @@ impl App for CatFacts {
             Event::GetPlatform => {
                 self.platform
                     .update(PlatformEvent::Get, &mut model.platform, &caps.into())
+            }
+            Event::Platform(msg) => self.platform.update(msg, &mut model.platform, &caps.into()),
+            Event::Clear => {
+                model.cat_fact = None;
+                model.cat_image = None;
+                let bytes = serde_json::to_vec(&model).unwrap();
+
+                caps.key_value.write("state", bytes, |_| Event::None);
+                caps.render.render();
+            }
+            Event::Get => {
+                if let Some(_fact) = &model.cat_fact {
+                    caps.render.render()
+                } else {
+                    self.update(Event::Fetch, model, caps)
+                }
+            }
+            Event::Fetch => {
+                model.cat_image = Some(CatImage::default());
+
+                caps.http
+                    .get(FACT_API_URL)
+                    .expect_json()
+                    .send(Event::SetFact);
+
+                caps.http
+                    .get(IMAGE_API_URL)
+                    .expect_json()
+                    .send(Event::SetImage);
+
+                caps.render.render();
+            }
+            Event::SetFact(Ok(mut response)) => {
+                // TODO check status
+                model.cat_fact = Some(response.take_body().unwrap());
+
+                let bytes = serde_json::to_vec(&model).unwrap();
+                caps.key_value.write("state", bytes, |_| Event::None);
+
+                caps.time.get(Event::CurrentTime);
+            }
+            Event::SetImage(Ok(mut response)) => {
+                // TODO check status
        

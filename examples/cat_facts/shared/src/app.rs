@@ -196,4 +196,65 @@ impl App for CatFacts {
         };
 
         let platform =
-            <platform::Platform as cr
+            <platform::Platform as crux_core::App>::view(&self.platform, &model.platform).platform;
+
+        ViewModel {
+            platform: format!("Hello {platform}"),
+            fact,
+            image: model.cat_image.clone(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crux_core::testing::AppTester;
+    use crux_http::{
+        protocol::{HttpRequest, HttpResponse},
+        testing::ResponseBuilder,
+    };
+
+    use crate::Effect;
+
+    use super::*;
+
+    #[test]
+    fn fetch_sends_some_requests() {
+        let app = AppTester::<CatFacts, _>::default();
+        let mut model = Model::default();
+
+        let update = app.update(Event::Fetch, &mut model);
+
+        assert_eq!(
+            update.effects[0],
+            Effect::Http(HttpRequest {
+                method: "GET".into(),
+                url: FACT_API_URL.into(),
+                headers: vec![]
+            })
+        );
+        assert_eq!(
+            update.effects[1],
+            Effect::Http(HttpRequest {
+                method: "GET".into(),
+                url: IMAGE_API_URL.into(),
+                headers: vec![]
+            })
+        );
+    }
+
+    #[test]
+    fn fact_response_results_in_set_fact() {
+        let app = AppTester::<CatFacts, _>::default();
+        let mut model = Model::default();
+
+        let update = app.update(Event::Fetch, &mut model);
+
+        assert_eq!(
+            update.effects[0],
+            Effect::Http(HttpRequest {
+                method: "GET".into(),
+                url: FACT_API_URL.into(),
+                headers: vec![]
+            })
+ 

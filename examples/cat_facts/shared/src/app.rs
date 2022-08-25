@@ -155,4 +155,45 @@ impl App for CatFacts {
             }
             Event::SetImage(Ok(mut response)) => {
                 // TODO check status
-       
+                model.cat_image = Some(response.take_body().unwrap());
+
+                let bytes = serde_json::to_vec(&model).unwrap();
+                caps.key_value.write("state", bytes, |_| Event::None);
+
+                caps.render.render();
+            }
+            Event::SetFact(Err(_)) | Event::SetImage(Err(_)) => {
+                // TODO: Display an error or something?
+            }
+            Event::CurrentTime(iso_time) => {
+                model.time = Some(iso_time.0);
+                let bytes = serde_json::to_vec(&model).unwrap();
+                caps.key_value.write("state", bytes, |_| Event::None);
+
+                caps.render.render();
+            }
+            Event::Restore => {
+                caps.key_value.read("state", Event::SetState);
+            }
+            Event::SetState(response) => {
+                if let KeyValueOutput::Read(Some(bytes)) = response {
+                    if let Ok(m) = serde_json::from_slice::<Model>(&bytes) {
+                        *model = m
+                    };
+                }
+
+                caps.render.render()
+            }
+            Event::None => {}
+        }
+    }
+
+    fn view(&self, model: &Model) -> ViewModel {
+        let fact = match (&model.cat_fact, &model.time) {
+            (Some(fact), Some(time)) => format!("Fact from {}: {}", time, fact.format()),
+            (Some(fact), _) => fact.format(),
+            _ => "No fact".to_string(),
+        };
+
+        let platform =
+            <platform::Platform as cr

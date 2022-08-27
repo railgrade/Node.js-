@@ -124,4 +124,53 @@ packages:
     optional: true
 
   /@next/swc-darwin-x64/13.0.3:
-    resolution: {integrity: sha512-jaI2CMuYWvUtRixV3AIjUhnxUDU1FKOR+8hADMhYt3Yz
+    resolution: {integrity: sha512-jaI2CMuYWvUtRixV3AIjUhnxUDU1FKOR+8hADMhYt3Yz+pCKuj4RZ0n0nY5qUf3qT1AtvnJXEgyatSFJhSp/wQ==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@next/swc-freebsd-x64/13.0.3:
+    resolution: {integrity: sha512-nbyT0toBTJrcj5TCB9pVnQpGJ3utGyQj4CWegZs1ulaeUQ5Z7CS/qt8nRyYyOKYHtOdSCJ9Nw5F/RgKNkdpOdw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [freebsd]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@next/swc-linux-arm-gnueabihf/13.0.3:
+    resolution: {integrity: sha512-1naLxYvRUQCoFCU1nMkcQueRc0Iux9xBv1L5pzH2ejtIWFg8BrSgyuluJG4nyAhFCx4WG863IEIkAaefOowVdA==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@next/swc-linux-arm64-gnu/13.0.3:
+    resolution: {integrity: sha512-3Z4A8JkuGWpMVbUhUPQInK/SLY+kijTT78Q/NZCrhLlyvwrVxaQALJNlXzxDLraUgv4oVH0Wz/FIw1W9PUUhxA==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@next/swc-linux-arm64-musl/13.0.3:
+    resolution: {integrity: sha512-MoYe9SM40UaunTjC+01c9OILLH3uSoeri58kDMu3KF/EFEvn1LZ6ODeDj+SLGlAc95wn46hrRJS2BPmDDE+jFQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@next/swc-linux-x64-gnu/13.0.3:
+    resolution: {integrity: sha512-z22T5WGnRanjLMXdF0NaNjSpBlEzzY43t5Ysp3nW1oI6gOkub6WdQNZeHIY7A2JwkgSWZmtjLtf+Fzzz38LHeQ==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild

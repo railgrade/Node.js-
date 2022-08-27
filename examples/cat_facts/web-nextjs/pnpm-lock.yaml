@@ -1,0 +1,33 @@
+lockfileVersion: 5.4
+
+specifiers:
+  '@types/node': 18.11.9
+  '@types/react': 18.0.25
+  '@types/react-dom': 18.0.8
+  '@types/ua-parser-js': ^0.7.36
+  '@wasm-tool/wasm-pack-plugin': ^1.6.0
+  eslint: 8.27.0
+  eslint-config-next: 13.0.3
+  next: 13.0.3
+  react: 18.2.0
+  react-dom: 18.2.0
+  shared_types: ../shared_types/generated/typescript
+  typescript: 4.8.4
+  ua-parser-js: ^1.0.32
+
+dependencies:
+  eslint: 8.27.0
+  eslint-config-next: 13.0.3_rmayb2veg2btbq6mbmnyivgasy
+  next: 13.0.3_biqbaboplfbrettd7655fr4n2y
+  react: 18.2.0
+  react-dom: 18.2.0_react@18.2.0
+  shared_types: link:../shared_types/generated/typescript
+  typescript: 4.8.4
+  ua-parser-js: 1.0.32
+
+devDependencies:
+  '@types/node': 18.11.9
+  '@types/react': 18.0.25
+  '@types/react-dom': 18.0.8
+  '@types/ua-parser-js': 0.7.36
+  '@wasm-tool/

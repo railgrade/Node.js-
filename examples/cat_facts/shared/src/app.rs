@@ -257,4 +257,17 @@ mod tests {
                 url: FACT_API_URL.into(),
                 headers: vec![]
             })
- 
+        );
+        let a_fact = CatFact {
+            fact: "cats are good".to_string(),
+            length: 13,
+        };
+
+        let update = update.effects[0].resolve(&HttpResponse {
+            status: 200,
+            body: serde_json::to_vec(&a_fact).unwrap(),
+        });
+        let expected_response = ResponseBuilder::ok().body(a_fact).build();
+        assert_eq!(update.events, vec![Event::SetFact(Ok(expected_response))])
+    }
+}

@@ -39,3 +39,201 @@ public abstract class Event {
     public static final class Get extends Event {
         public Get() {
         }
+
+        public void serialize(com.novi.serde.Serializer serializer) throws com.novi.serde.SerializationError {
+            serializer.increase_container_depth();
+            serializer.serialize_variant_index(0);
+            serializer.decrease_container_depth();
+        }
+
+        static Get load(com.novi.serde.Deserializer deserializer) throws com.novi.serde.DeserializationError {
+            deserializer.increase_container_depth();
+            Builder builder = new Builder();
+            deserializer.decrease_container_depth();
+            return builder.build();
+        }
+
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            Get other = (Get) obj;
+            return true;
+        }
+
+        public int hashCode() {
+            int value = 7;
+            return value;
+        }
+
+        public static final class Builder {
+            public Get build() {
+                return new Get(
+                );
+            }
+        }
+    }
+
+    public static final class Increment extends Event {
+        public Increment() {
+        }
+
+        public void serialize(com.novi.serde.Serializer serializer) throws com.novi.serde.SerializationError {
+            serializer.increase_container_depth();
+            serializer.serialize_variant_index(1);
+            serializer.decrease_container_depth();
+        }
+
+        static Increment load(com.novi.serde.Deserializer deserializer) throws com.novi.serde.DeserializationError {
+            deserializer.increase_container_depth();
+            Builder builder = new Builder();
+            deserializer.decrease_container_depth();
+            return builder.build();
+        }
+
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            Increment other = (Increment) obj;
+            return true;
+        }
+
+        public int hashCode() {
+            int value = 7;
+            return value;
+        }
+
+        public static final class Builder {
+            public Increment build() {
+                return new Increment(
+                );
+            }
+        }
+    }
+
+    public static final class Decrement extends Event {
+        public Decrement() {
+        }
+
+        public void serialize(com.novi.serde.Serializer serializer) throws com.novi.serde.SerializationError {
+            serializer.increase_container_depth();
+            serializer.serialize_variant_index(2);
+            serializer.decrease_container_depth();
+        }
+
+        static Decrement load(com.novi.serde.Deserializer deserializer) throws com.novi.serde.DeserializationError {
+            deserializer.increase_container_depth();
+            Builder builder = new Builder();
+            deserializer.decrease_container_depth();
+            return builder.build();
+        }
+
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            Decrement other = (Decrement) obj;
+            return true;
+        }
+
+        public int hashCode() {
+            int value = 7;
+            return value;
+        }
+
+        public static final class Builder {
+            public Decrement build() {
+                return new Decrement(
+                );
+            }
+        }
+    }
+
+    public static final class StartWatch extends Event {
+        public StartWatch() {
+        }
+
+        public void serialize(com.novi.serde.Serializer serializer) throws com.novi.serde.SerializationError {
+            serializer.increase_container_depth();
+            serializer.serialize_variant_index(3);
+            serializer.decrease_container_depth();
+        }
+
+        static StartWatch load(com.novi.serde.Deserializer deserializer) throws com.novi.serde.DeserializationError {
+            deserializer.increase_container_depth();
+            Builder builder = new Builder();
+            deserializer.decrease_container_depth();
+            return builder.build();
+        }
+
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            StartWatch other = (StartWatch) obj;
+            return true;
+        }
+
+        public int hashCode() {
+            int value = 7;
+            return value;
+        }
+
+        public static final class Builder {
+            public StartWatch build() {
+                return new StartWatch(
+                );
+            }
+        }
+    }
+
+    public static final class WatchUpdate extends Event {
+        public final Counter value;
+
+        public WatchUpdate(Counter value) {
+            java.util.Objects.requireNonNull(value, "value must not be null");
+            this.value = value;
+        }
+
+        public void serialize(com.novi.serde.Serializer serializer) throws com.novi.serde.SerializationError {
+            serializer.increase_container_depth();
+            serializer.serialize_variant_index(4);
+            value.serialize(serializer);
+            serializer.decrease_container_depth();
+        }
+
+        static WatchUpdate load(com.novi.serde.Deserializer deserializer) throws com.novi.serde.DeserializationError {
+            deserializer.increase_container_depth();
+            Builder builder = new Builder();
+            builder.value = Counter.deserialize(deserializer);
+            deserializer.decrease_container_depth();
+            return builder.build();
+        }
+
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            WatchUpdate other = (WatchUpdate) obj;
+            if (!java.util.Objects.equals(this.value, other.value)) { return false; }
+            return true;
+        }
+
+        public int hashCode() {
+            int value = 7;
+            value = 31 * value + (this.value != null ? this.value.hashCode() : 0);
+            return value;
+        }
+
+        public static final class Builder {
+            public Counter value;
+
+            public WatchUpdate build() {
+                return new WatchUpdate(
+                    value
+                );
+            }
+        }
+    }
+}

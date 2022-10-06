@@ -65,4 +65,22 @@ public final class HttpRequest {
     public int hashCode() {
         int value = 7;
         value = 31 * value + (this.method != null ? this.method.hashCode() : 0);
-        value = 31 * value + (this.url != null ? th
+        value = 31 * value + (this.url != null ? this.url.hashCode() : 0);
+        value = 31 * value + (this.headers != null ? this.headers.hashCode() : 0);
+        return value;
+    }
+
+    public static final class Builder {
+        public String method;
+        public String url;
+        public java.util.List<HttpHeader> headers;
+
+        public HttpRequest build() {
+            return new HttpRequest(
+                method,
+                url,
+                headers
+            );
+        }
+    }
+}

@@ -59,4 +59,19 @@ public final class HttpResponse {
     public int hashCode() {
         int value = 7;
         value = 31 * value + (this.status != null ? this.status.hashCode() : 0);
-        
+        value = 31 * value + (this.body != null ? this.body.hashCode() : 0);
+        return value;
+    }
+
+    public static final class Builder {
+        public @com.novi.serde.Unsigned Short status;
+        public java.util.List<@com.novi.serde.Unsigned Byte> body;
+
+        public HttpResponse build() {
+            return new HttpResponse(
+                status,
+                body
+            );
+        }
+    }
+}

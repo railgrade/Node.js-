@@ -34,4 +34,44 @@ public final class ViewModel {
         return builder.build();
     }
 
-    public static ViewModel 
+    public static ViewModel bcsDeserialize(byte[] input) throws com.novi.serde.DeserializationError {
+        if (input == null) {
+             throw new com.novi.serde.DeserializationError("Cannot deserialize null array");
+        }
+        com.novi.serde.Deserializer deserializer = new com.novi.bcs.BcsDeserializer(input);
+        ViewModel value = deserialize(deserializer);
+        if (deserializer.get_buffer_offset() < input.length) {
+             throw new com.novi.serde.DeserializationError("Some input bytes were not read");
+        }
+        return value;
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        ViewModel other = (ViewModel) obj;
+        if (!java.util.Objects.equals(this.text, other.text)) { return false; }
+        if (!java.util.Objects.equals(this.confirmed, other.confirmed)) { return false; }
+        return true;
+    }
+
+    public int hashCode() {
+        int value = 7;
+        value = 31 * value + (this.text != null ? this.text.hashCode() : 0);
+        value = 31 * value + (this.confirmed != null ? this.confirmed.hashCode() : 0);
+        return value;
+    }
+
+    public static final class Builder {
+        public String text;
+        public Boolean confirmed;
+
+        public ViewModel build() {
+            return new ViewModel(
+                text,
+                confirmed
+            );
+        }
+    }
+}

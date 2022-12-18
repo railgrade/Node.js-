@@ -3234,4 +3234,77 @@ dependencies = [
 ]
 
 [[package]]
-name = "uniffi_chec
+name = "uniffi_checksum_derive"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03de61393a42b4ad4984a3763c0600594ac3e57e5aaa1d05cede933958987c03"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "uniffi_core"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a2b4852d638d74ca2d70e450475efb6d91fe6d54a7cd8d6bd80ad2ee6cd7daa"
+dependencies = [
+ "anyhow",
+ "bytes 1.4.0",
+ "camino",
+ "cargo_metadata",
+ "log",
+ "once_cell",
+ "paste",
+ "static_assertions",
+]
+
+[[package]]
+name = "uniffi_macros"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa03394de21e759e0022f1ea8d992d2e39290d735b9ed52b1f74b20a684f794e"
+dependencies = [
+ "bincode",
+ "camino",
+ "fs-err",
+ "once_cell",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "syn",
+ "toml",
+ "uniffi_build",
+ "uniffi_meta",
+]
+
+[[package]]
+name = "uniffi_meta"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66fdab2c436aed7a6391bec64204ec33948bfed9b11b303235740771f85c4ea6"
+dependencies = [
+ "serde",
+ "siphasher",
+ "uniffi_checksum_derive",
+]
+
+[[package]]
+name = "uniffi_testing"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92b0570953ec41d97ce23e3b92161ac18231670a1f97523258a6d2ab76d7f76c"
+dependencies = [
+ "anyhow",
+ "camino",
+ "cargo_metadata",
+ "fs-err",
+ "once_cell",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "universal-hash"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lan

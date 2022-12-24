@@ -48,4 +48,43 @@ trunk serve
 
 ## React Web app
 
-The web application shoul
+The web application should now build and run
+
+```
+cd web-nextjs
+pnpm install
+pnpm dev
+```
+
+## iOS
+
+You will need XCode, which you can get in the Mac AppStore
+
+```
+cd iOS
+open CounterApp.xcodeproj
+```
+
+You should be able to press "Play" to start the app in the simulator.
+
+### Notes:
+
+- You may encounter this error:
+
+  ```
+  xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun
+  ```
+
+  If this happens, then you need to install the [Command Line Tools For Xcode](https://developer.apple.com/download/all/).
+
+## Android
+
+Open the `Android` folder in [Android Studio](https://developer.android.com/studio/).
+If the build is successful, you should be able to press "Play" to start the app in the simulator.
+
+### Notes:
+
+- The Android Studio build might fail for a couple of known reasons:
+  - A `linker-wrapper.sh` script failure<br>Ensure you have Python installed and your `PATH`
+  - `NDK is not installed`<br>Install this via Android Studio --> Settings --> Appearance and Behaviour --> System Settings --> Select the "SDK Tools" tab, select "NDK (side by side)" and press Apply to install
+- If Android studio fails to install `git`, you can set the path to your git binary (e.g. the homebrew one) in the preferences under Version Control > Git

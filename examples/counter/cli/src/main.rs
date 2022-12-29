@@ -54,4 +54,55 @@ struct Args {
 }
 
 fn main() -> Result<()> {
-    let (tx, rx) = crossbeam_c
+    let (tx, rx) = crossbeam_channel::unbounded::<CoreMessage>();
+
+    let strong_tx = Arc::new(tx);
+    let tx = Arc::downgrade(&strong_tx);
+
+    // Kick off with the given command
+
+    main_loop(Args::parse().cmd.into(), tx.clone())?;
+    drop(strong_tx); // tx may still live in a side-effect futures
+
+    // Continue until there's no more work to do
+    while let Ok(msg) = rx.recv() {
+        main_loop(msg, tx.clone())?;
+    }
+
+    Ok(())
+}
+
+fn main_loop(msg: CoreMessage, tx: Weak<Sender<CoreMessage>>) -> Result<(), eyre::ErrReport> {
+    let reqs = match msg {
+        CoreMessage::Event(m) => shared::process_event(&to_bytes(&m).unwrap()),
+        CoreMessage::Response(uuid, output) => shared::handle_response(
+            &uuid,
+            &match output {
+                Outcome::Http(x) => to_bytes(&x).unwrap(),
+                Outcome::Sse(x) => to_bytes(&x).unwrap(),
+            },
+        ),
+    };
+    let reqs: Vec<Request<Effect>> = from_bytes(&reqs).unwrap();
+
+    for Request { uuid, effect } in reqs {
+        match effect {
+            Effect::Render(_) => {
+                let view = from_bytes::<ViewModel>(&shared::view())?;
+                let text = view.text;
+
+                if !text.contains("pending") {
+                    println!("{text}");
+                }
+            }
+            Effect::Http(HttpRequest {
+                method,
+                url,
+                headers,
+            }) => {
+                let method = Method::from_str(&method).expect("unknown http method");
+                let url = Url::parse(&url)?;
+
+                async_std::task::spawn({
+                    let tx = tx.upgrade().unwrap();
+               

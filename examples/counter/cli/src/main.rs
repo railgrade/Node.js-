@@ -105,4 +105,51 @@ fn main_loop(msg: CoreMessage, tx: Weak<Sender<CoreMessage>>) -> Result<(), eyre
 
                 async_std::task::spawn({
                     let tx = tx.upgrade().unwrap();
-               
+                    async move {
+                        let response = http(method, url, &headers).await.unwrap();
+                        let outcome = Outcome::Http(response);
+                        let message = CoreMessage::Response(uuid.clone(), outcome);
+
+                        tx.send(message).unwrap();
+                    }
+                });
+            }
+            Effect::ServerSentEvents(SseRequest { url }) => {
+                let url = Url::parse(&url)?;
+
+                async_std::task::spawn({
+                    let tx = tx.upgrade().unwrap();
+                    async move {
+                        let mut stream = sse(url).await.unwrap();
+
+                        while let Ok(Some(item)) = stream.try_next().await {
+                            let outcome = Outcome::Sse(SseResponse::Chunk(item));
+                            let message = CoreMessage::Response(uuid.clone(), outcome);
+
+                            tx.send(message).unwrap();
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn http(method: Method, url: Url, headers: &[HttpHeader]) -> Result<HttpResponse> {
+    let client: Client = Config::new()
+        .set_timeout(Some(Duration::from_secs(5)))
+        .try_into()?;
+
+    let mut request = client.request(method, &url);
+
+    for header in headers {
+        request = request.header(header.name.as_str(), &header.value);
+    }
+
+    let mut response = request
+        .await
+        .map_err(|e| eyre!("{method} {url}: error {e}"))?;
+
+    let status = r

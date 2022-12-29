@@ -152,4 +152,36 @@ async fn http(method: Method, url: Url, headers: &[HttpHeader]) -> Result<HttpRe
         .await
         .map_err(|e| eyre!("{method} {url}: error {e}"))?;
 
-    let status = r
+    let status = response.status().into();
+
+    match response.body_bytes().await {
+        Ok(body) => Ok(HttpResponse { status, body }),
+        Err(e) => bail!("{method} {url}: error {e}"),
+    }
+}
+
+async fn sse(url: Url) -> Result<impl futures::stream::TryStream<Ok = Vec<u8>>> {
+    let mut response = surf::get(&url)
+        .await
+        .map_err(|e| eyre!("get {url}: error {e}"))?;
+
+    let status = response.status().into();
+
+    let body = if let 200..=299 = status {
+        response.take_body()
+    } else {
+        bail!("get {url}: status {status}");
+    };
+
+    let body = body.into_reader();
+
+    Ok(Box::pin(stream::try_unfold(body, |mut body| async {
+        let mut buf = [0; 1024];
+
+        match body.read(&mut buf).await {
+            Ok(n) if n == 0 => Ok(None),
+            Ok(n) => Ok(Some((buf[0..n].to_vec(), body))),
+            Err(e) => bail!("failed to read from http response; err = {:?}", e),
+        }
+    })))
+}

@@ -87,4 +87,53 @@ impl crux_core::App for App {
                 caps.render.render();
 
                 // real update
-      
+                let base = Url::parse(API_URL).unwrap();
+                let url = base.join("/dec").unwrap();
+                caps.http.post(url.as_str()).expect_json().send(Event::Set);
+            }
+            Event::StartWatch => {
+                let base = Url::parse(API_URL).unwrap();
+                let url = base.join("/sse").unwrap();
+                caps.sse.get_json(url.as_str(), Event::WatchUpdate);
+            }
+            Event::WatchUpdate(count) => {
+                model.count = count;
+                model.confirmed = Some(true);
+                caps.render.render();
+            }
+        }
+    }
+
+    fn view(&self, model: &Self::Model) -> Self::ViewModel {
+        let updated_at = DateTime::<Utc>::from_utc(
+            NaiveDateTime::from_timestamp_millis(model.count.updated_at).unwrap(),
+            Utc,
+        ); // .format("updated at %H:%M:%S");
+
+        let suffix = match model.confirmed {
+            Some(true) => format!(" ({updated_at})"),
+            Some(false) => " (pending)".to_string(),
+            None => "".to_string(),
+        };
+
+        Self::ViewModel {
+            text: model.count.value.to_string() + &suffix,
+            confirmed: model.confirmed.unwrap_or(false),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{App, Event, Model};
+    use crate::capabilities::sse::SseRequest;
+    use crate::{Counter, Effect};
+    use crux_core::{render::RenderOperation, testing::AppTester};
+    use crux_http::{
+        protocol::{HttpRequest, HttpResponse},
+        testing::ResponseBuilder,
+    };
+
+    #[test]
+    fn get_counter() {
+        let app = AppTester::<App, _>::d

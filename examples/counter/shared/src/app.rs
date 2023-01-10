@@ -34,4 +34,57 @@ pub enum Event {
     WatchUpdate(Counter),
 }
 
-#[de
+#[derive(Effect)]
+pub struct Capabilities {
+    pub http: Http<Event>,
+    pub render: Render<Event>,
+    pub sse: ServerSentEvents<Event>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq)]
+pub struct Counter {
+    value: isize,
+    updated_at: i64,
+}
+
+#[derive(Default)]
+pub struct App;
+
+impl crux_core::App for App {
+    type Model = Model;
+    type Event = Event;
+    type ViewModel = ViewModel;
+    type Capabilities = Capabilities;
+
+    fn update(&self, msg: Self::Event, model: &mut Self::Model, caps: &Self::Capabilities) {
+        match msg {
+            Event::Get => {
+                caps.http.get(API_URL).expect_json().send(Event::Set);
+            }
+            Event::Set(Ok(mut counter)) => {
+                model.count = counter.take_body().unwrap();
+                model.confirmed = Some(true);
+                caps.render.render();
+            }
+            Event::Set(Err(_)) => {
+                panic!("Oh no something went wrong");
+            }
+            Event::Increment => {
+                // optimistic update
+                model.count.value += 1;
+                model.confirmed = Some(false);
+                caps.render.render();
+
+                // real update
+                let base = Url::parse(API_URL).unwrap();
+                let url = base.join("/inc").unwrap();
+                caps.http.post(url.as_str()).expect_json().send(Event::Set);
+            }
+            Event::Decrement => {
+                // optimistic update
+                model.count.value -= 1;
+                model.confirmed = Some(false);
+                caps.render.render();
+
+                // real update
+      

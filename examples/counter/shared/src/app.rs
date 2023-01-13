@@ -136,4 +136,59 @@ mod tests {
 
     #[test]
     fn get_counter() {
-        let app = AppTester::<App, _>::d
+        let app = AppTester::<App, _>::default();
+        let mut model = Model::default();
+
+        let update = app.update(Event::Get, &mut model);
+
+        let actual = &update.effects[0];
+        let expected = &Effect::Http(HttpRequest {
+            method: "GET".to_string(),
+            url: "https://crux-counter.fly.dev/".to_string(),
+            headers: vec![],
+        });
+        assert_eq!(actual, expected);
+
+        let update = update.effects[0].resolve(&HttpResponse {
+            status: 200,
+            body: serde_json::to_vec(&Counter {
+                value: 1,
+                updated_at: 1,
+            })
+            .unwrap(),
+        });
+
+        let actual = update.events;
+        let expected = vec![Event::new_set(1, 1)];
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn set_counter() {
+        let app = AppTester::<App, _>::default();
+        let mut model = Model::default();
+
+        let update = app.update(Event::new_set(1, 1), &mut model);
+
+        let actual = &update.effects[0];
+        let expected = &Effect::Render(RenderOperation);
+        assert_eq!(actual, expected);
+
+        let actual = model.count.value;
+        let expected = 1;
+        assert_eq!(actual, expected);
+
+        let actual = model.confirmed;
+        let expected = Some(true);
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn increment_counter() {
+        let app = AppTester::<App, _>::default();
+        let mut model = Model::default();
+
+        let update = app.update(Event::Increment, &mut model);
+
+        let actual = &update.effects[0];
+        let e

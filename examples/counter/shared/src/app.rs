@@ -296,4 +296,22 @@ mod tests {
 
         assert_eq!(actual, expected);
 
-        let actual = model.coun
+        let actual = model.count.value;
+        let expected = 1;
+        assert_eq!(actual, expected);
+
+        let actual = model.confirmed;
+        let expected = Some(true);
+        assert_eq!(actual, expected);
+    }
+
+    impl Event {
+        fn new_set(value: isize, updated_at: i64) -> Event {
+            let response = ResponseBuilder::ok()
+                .body(Counter { value, updated_at })
+                .build();
+
+            Event::Set(Ok(response))
+        }
+    }
+}

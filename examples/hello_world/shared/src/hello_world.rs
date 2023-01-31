@@ -55,4 +55,13 @@ mod tests {
         let update = hello.update(Event::None, &mut model);
 
         // Check update asked us to `Render`
-        let actual_effect = &update.e
+        let actual_effect = &update.effects[0];
+        let expected_effect = &Effect::Render(RenderOperation);
+        assert_eq!(actual_effect, expected_effect);
+
+        // Make sure the view matches our expectations
+        let actual_view = &hello.view(&model).data;
+        let expected_view = "Hello World";
+        assert_eq!(actual_view, expected_view);
+    }
+}

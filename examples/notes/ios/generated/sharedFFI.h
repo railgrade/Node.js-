@@ -40,4 +40,37 @@ typedef struct ForeignBytes
 typedef struct RustCallStatus {
     int8_t code;
     RustBuffer errorBuf;
-}
+} RustCallStatus;
+
+// ⚠️ Attention: If you change this #else block (ending in `#endif // def UNIFFI_SHARED_H`) you *must* ⚠️
+// ⚠️ increment the version suffix in all instances of UNIFFI_SHARED_HEADER_V4 in this file.           ⚠️
+#endif // def UNIFFI_SHARED_H
+
+RustBuffer shared_2a51_process_event(
+      RustBuffer msg,
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer shared_2a51_handle_response(
+      RustBuffer uuid,RustBuffer res,
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer shared_2a51_view(
+      
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer ffi_shared_2a51_rustbuffer_alloc(
+      int32_t size,
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer ffi_shared_2a51_rustbuffer_from_bytes(
+      ForeignBytes bytes,
+    RustCallStatus *_Nonnull out_status
+    );
+void ffi_shared_2a51_rustbuffer_free(
+      RustBuffer buf,
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer ffi_shared_2a51_rustbuffer_reserve(
+      RustBuffer buf,int32_t additional,
+    RustCallStatus *_Nonnull out_status
+    );

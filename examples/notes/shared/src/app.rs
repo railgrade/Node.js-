@@ -670,3 +670,427 @@ mod save_load_tests {
         assert_eq!(update.events.len(), 1);
 
         for e in update.events {
+            let update = app.update(e, &mut model);
+            let saves = update
+                .effects
+                .iter()
+                .any(|e| matches!(e.as_ref(), Effect::KeyValue(KeyValueOperation::Write(key, _)) if key == &"note".to_string()));
+
+            assert!(saves)
+        }
+    }
+
+    #[test]
+    fn starts_a_timer_after_an_edit() {
+        let app = AppTester::<NoteEditor, _>::default();
+
+        let mut model = Model {
+            note: Note::with_text("hello"),
+            cursor: TextCursor::Selection(2..4),
+            ..Default::default()
+        };
+
+        // An edit should trigger a timer
+        let update = app.update(Event::Insert("something".to_string()), &mut model);
+        let timer_effects: Vec<_> = update
+            .effects
+            .iter()
+            .filter(|e| matches!(e.as_ref(), Effect::Timer(_)))
+            .collect();
+
+        assert_eq!(timer_effects.len(), 1);
+
+        let first_id = match timer_effects[0].as_ref() {
+            Effect::Timer(TimerOperation::Start { id, millis }) => {
+                assert_eq!(*millis, 1000);
+
+                id
+            }
+            _ => unreachable!(),
+        };
+
+        // Tells app the timer was created
+        let update = timer_effects[0].resolve(&TimerOutput::Created { id: *first_id });
+        for event in update.events {
+            println!("Event: {event:?}");
+            app.update(event, &mut model);
+        }
+
+        // Before the timer fires, insert another character, which should
+        // cancel the timer and start a new one
+        let update = app.update(Event::Replace(1, 2, "a".to_string()), &mut model);
+
+        let timer_effects: Vec<_> = update
+            .effects
+            .iter()
+            .filter(|e| matches!(e.as_ref(), Effect::Timer(_)))
+            .collect();
+
+        assert_eq!(timer_effects.len(), 2);
+
+        let cancel = timer_effects[0];
+        let start = timer_effects[1];
+
+        let cancel_id = match cancel.as_ref() {
+            Effect::Timer(TimerOperation::Cancel { id }) => id,
+            _ => unreachable!(),
+        };
+
+        assert_eq!(cancel_id, first_id);
+
+        let second_id = match start.as_ref() {
+            Effect::Timer(TimerOperation::Start { id, millis }) => {
+                assert_eq!(*millis, 1000);
+
+                id
+            }
+            _ => unreachable!(),
+        };
+
+        assert_ne!(first_id, second_id);
+
+        // Tell app the second timer was created
+        let update = timer_effects[1].resolve(&TimerOutput::Created { id: *second_id });
+        for event in update.events {
+            println!("Event: {event:?}");
+            app.update(event, &mut model);
+        }
+
+        // Time passes
+
+        // Fire the timer
+        let update = timer_effects[1].resolve(&TimerOutput::Finished { id: *second_id });
+        for event in update.events {
+            println!("Event: {event:?}");
+            app.update(event, &mut model);
+        }
+
+        // One more edit. Should result in a timer, but not in cancellation
+        let update = app.update(Event::Backspace, &mut model);
+        let timer_effects: Vec<_> = update
+            .effects
+            .iter()
+            .filter(|e| matches!(e.as_ref(), Effect::Timer(_)))
+            .collect();
+
+        assert_eq!(timer_effects.len(), 1);
+
+        let third_id = match timer_effects[0].as_ref() {
+            Effect::Timer(TimerOperation::Start { id, millis }) => {
+                assert_eq!(*millis, 1000);
+
+                id
+            }
+            _ => unreachable!(),
+        };
+
+        println!("Third id: {third_id}, second id: {second_id}");
+
+        assert_ne!(third_id, second_id);
+    }
+
+    #[test]
+    fn saves_document_when_typing_stops() {
+        let app = AppTester::<NoteEditor, _>::default();
+
+        let mut model = Model {
+            note: Note::with_text("hello"),
+            cursor: TextCursor::Position(5),
+            edit_timer: EditTimer {
+                current_id: Some(1),
+                next_id: 2,
+            },
+        };
+
+        // An edit should trigger a timer
+        let update = app.update(
+            Event::EditTimer(TimerOutput::Finished { id: 1 }),
+            &mut model,
+        );
+        let write_effect = update
+            .effects
+            .iter()
+            .find(|e| matches!(e.as_ref(), Effect::KeyValue(KeyValueOperation::Write(_, _))))
+            .expect("a key value write");
+
+        if let Effect::KeyValue(KeyValueOperation::Write(key, value)) = write_effect.as_ref() {
+            assert_eq!(key, &"note".to_string());
+            assert_eq!(value, &model.note.save());
+        } else {
+            unreachable!();
+        }
+    }
+}
+
+#[cfg(test)]
+mod sync_tests {
+    use std::collections::VecDeque;
+
+    use crux_core::testing::{AppTester, TestEffect};
+
+    use crate::capabilities::pub_sub::PubSubOperation;
+
+    use super::*;
+
+    struct Peer {
+        app: AppTester<NoteEditor, Effect>,
+        model: Model,
+        subscription: Option<TestEffect<Effect, Event>>,
+        edits: VecDeque<Vec<u8>>,
+    }
+
+    // A jig to make testing sync a bit easier
+
+    impl Peer {
+        fn new() -> Self {
+            let app = AppTester::<_, _>::default();
+            let model = Default::default();
+
+            Self {
+                app,
+                model,
+                subscription: None,
+                edits: VecDeque::new(),
+            }
+        }
+
+        // Update, picking out and keeping PubSub effects
+        fn update(&mut self, event: Event) -> (Vec<Effect>, Vec<Event>) {
+            let update = self.app.update(event, &mut self.model);
+
+            let events = update.events;
+            let mut effects = Vec::new();
+
+            for effect in update.effects {
+                match effect.as_ref() {
+                    Effect::PubSub(PubSubOperation::Subscribe) => {
+                        self.subscription = Some(effect);
+                    }
+                    Effect::PubSub(PubSubOperation::Publish(bytes)) => {
+                        self.edits.push_back(bytes.clone());
+                    }
+                    ef => effects.push(ef.clone()),
+                }
+            }
+
+            (effects, events)
+        }
+
+        fn view(&self) -> ViewModel {
+            self.app.view(&self.model)
+        }
+
+        fn send_edits(&mut self, edits: &[Vec<u8>]) -> (Vec<Effect>, Vec<Event>) {
+            let subscription = self.subscription.as_ref().expect("to have a subscription");
+
+            let mut effects = Vec::new();
+            let mut events = Vec::new();
+
+            let evs = edits
+                .iter()
+                .flat_map(|ed| subscription.resolve(ed).events)
+                .collect::<Vec<_>>();
+
+            for event in evs {
+                let (mut eff, mut ev) = self.update(event);
+
+                effects.append(&mut eff);
+                events.append(&mut ev);
+            }
+
+            (effects, events)
+        }
+    }
+
+    fn make_alice_and_bob() -> (Peer, Peer) {
+        let note = Note::new().save();
+
+        let mut alice = Peer::new();
+        let mut bob = Peer::new();
+
+        alice.update(Event::Load(KeyValueOutput::Read(Some(note.clone()))));
+        bob.update(Event::Load(KeyValueOutput::Read(Some(note))));
+
+        (alice, bob)
+    }
+
+    #[test]
+    fn one_way_sync() {
+        let (mut alice, mut bob) = make_alice_and_bob();
+
+        alice.update(Event::Insert("Hello".to_string()));
+        let edits = alice.edits.drain(0..).collect::<Vec<_>>();
+
+        bob.send_edits(edits.as_ref());
+
+        let alice_view = alice.view();
+        let bob_view = bob.view();
+
+        assert_eq!(alice_view.text, bob_view.text);
+    }
+
+    #[test]
+    fn two_way_sync() {
+        let (mut alice, mut bob) = make_alice_and_bob();
+
+        alice.update(Event::Insert("world".to_string()));
+        let edits = alice.edits.drain(0..).collect::<Vec<_>>();
+
+        bob.send_edits(edits.as_ref());
+
+        // Alice's inserts should go in front of Bob's cursor
+        // so we break the ambiguity of same cursor position
+        // as quickly as possible
+        bob.update(Event::Insert("Hello ".to_string()));
+        let edits = bob.edits.drain(0..).collect::<Vec<_>>();
+
+        alice.send_edits(edits.as_ref());
+
+        let alice_view = alice.view();
+        let bob_view = bob.view();
+
+        assert_eq!(alice_view.text, "Hello world".to_string());
+        assert_eq!(alice_view.text, bob_view.text);
+    }
+
+    #[test]
+    fn receiving_own_edits() {
+        let (mut alice, mut bob) = make_alice_and_bob();
+
+        alice.update(Event::Insert("world".to_string()));
+        let edits = alice.edits.drain(0..).collect::<Vec<_>>();
+
+        bob.send_edits(edits.as_ref());
+        alice.send_edits(edits.as_ref());
+
+        // Alice's inserts should go in front of Bob's cursor
+        // so we break the ambiguity of same cursor position
+        // as quickly as possible
+        bob.update(Event::Insert("Hello ".to_string()));
+        let edits = bob.edits.drain(0..).collect::<Vec<_>>();
+
+        alice.send_edits(edits.as_ref());
+        bob.send_edits(edits.as_ref());
+
+        let alice_view = alice.view();
+        let bob_view = bob.view();
+
+        assert_eq!(alice_view.text, "Hello world".to_string());
+        assert_eq!(alice_view.text, bob_view.text);
+    }
+
+    #[test]
+    fn remote_insert_behind_cursor() {
+        let (mut alice, mut bob) = make_alice_and_bob();
+
+        alice.update(Event::Insert("world".to_string()));
+        let edits = alice.edits.drain(0..).collect::<Vec<_>>();
+        bob.send_edits(edits.as_ref());
+
+        // Alice's inserts should go in front of Bob's cursor
+        // so we break the ambiguity of same cursor position
+        // as quickly as possible
+        bob.update(Event::Insert("Hello ".to_string()));
+        let edits = bob.edits.drain(0..).collect::<Vec<_>>();
+        alice.send_edits(edits.as_ref());
+
+        // Alice's cursor position should stay
+        // at the end of the text where she last inserted
+        alice.update(Event::Insert("!".to_string()));
+        let edits = alice.edits.drain(0..).collect::<Vec<_>>();
+        bob.send_edits(edits.as_ref());
+
+        // So should bob's
+        bob.update(Event::Insert("dear ".to_string()));
+        let edits = bob.edits.drain(0..).collect::<Vec<_>>();
+        alice.send_edits(edits.as_ref());
+
+        let alice_view = alice.view();
+        let bob_view = bob.view();
+
+        assert_eq!(alice_view.text, "Hello dear world!".to_string());
+        assert_eq!(alice_view.text, bob_view.text);
+    }
+
+    #[test]
+    fn concurrent_conflicting_edits() {
+        let (mut alice, mut bob) = make_alice_and_bob();
+
+        alice.update(Event::Insert("Hel".to_string()));
+        alice.update(Event::Insert("lo ".to_string()));
+
+        bob.update(Event::Insert("world.".to_string()));
+        bob.update(Event::Replace(5, 6, "!".to_string()));
+
+        let alice_edits = alice.edits.drain(0..).collect::<Vec<_>>();
+        let bob_edits = bob.edits.drain(0..).collect::<Vec<_>>();
+
+        bob.send_edits(alice_edits.as_ref());
+        alice.send_edits(bob_edits.as_ref());
+
+        let alice_view = alice.view();
+        let bob_view = bob.view();
+
+        // Cannot assert on the result here, it's a conflicting change
+        assert_eq!(alice_view.text, bob_view.text);
+    }
+
+    #[test]
+    fn concurrent_clean_edits() {
+        let (mut alice, mut bob) = make_alice_and_bob();
+
+        alice.update(Event::Insert("hel".to_string()));
+        alice.update(Event::Insert("lo ".to_string()));
+
+        let alice_edits = alice.edits.drain(0..).collect::<Vec<_>>();
+        bob.send_edits(alice_edits.as_ref());
+
+        alice.update(Event::Replace(0, 1, "H".to_string()));
+
+        bob.update(Event::MoveCursor(6));
+        bob.update(Event::Insert("world.".to_string()));
+        bob.update(Event::Backspace);
+        bob.update(Event::Insert("!".to_string()));
+
+        let alice_edits = alice.edits.drain(0..).collect::<Vec<_>>();
+        let bob_edits = bob.edits.drain(0..).collect::<Vec<_>>();
+
+        bob.send_edits(alice_edits.as_ref());
+        alice.send_edits(bob_edits.as_ref());
+
+        let alice_view = alice.view();
+        let bob_view = bob.view();
+
+        assert_eq!(alice_view.text, "Hello world!".to_string());
+        assert_eq!(alice_view.text, bob_view.text);
+    }
+
+    #[test]
+    fn remote_delete_moves_cursor() {
+        let (mut alice, mut bob) = make_alice_and_bob();
+
+        alice.update(Event::Insert("hel".to_string()));
+        alice.update(Event::Insert("lo ".to_string()));
+
+        let alice_edits = alice.edits.drain(0..).collect::<Vec<_>>();
+        bob.send_edits(alice_edits.as_ref());
+
+        bob.update(Event::Replace(6, 6, "world".to_string()));
+        bob.update(Event::Replace(0, 1, "H".to_string()));
+        let bob_edits = bob.edits.drain(0..).collect::<Vec<_>>();
+
+        alice.send_edits(bob_edits.as_ref());
+
+        // Alice's cursor should still be right after 'hello '
+        alice.update(Event::Insert("dear ".to_string()));
+        let alice_edits = alice.edits.drain(0..).collect::<Vec<_>>();
+
+        bob.send_edits(alice_edits.as_ref());
+
+        let alice_view = alice.view();
+        let bob_view = bob.view();
+
+        assert_eq!(alice_view.text, "Hello dear world".to_string());
+        assert_eq!(alice_view.text, bob_view.text);
+    }
+}

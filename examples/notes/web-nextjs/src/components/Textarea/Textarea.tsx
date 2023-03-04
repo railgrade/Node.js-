@@ -96,4 +96,33 @@ const Textarea: FC<TextareaProps> = ({
 
     onChange({
       start: bytesToUc(value, start),
-      end: bytesToUc(value, e
+      end: bytesToUc(value, end),
+      text,
+    });
+  };
+
+  const localOnSelect = (event: SyntheticEvent) => {
+    if (event.target == null) return;
+    let target = event.target as HTMLInputElement;
+
+    let end = target.selectionEnd ?? 0;
+    let start = target.selectionStart ?? 0;
+
+    beforeEdit.current.selectionEnd = end;
+    beforeEdit.current.length = target.value.length;
+
+    onSelect({ start: bytesToUc(value, start), end: bytesToUc(value, end) });
+  };
+
+  return (
+    <textarea
+      className={className}
+      ref={taRef}
+      onSelect={localOnSelect}
+      onChange={() => {}}
+      value={value}
+    />
+  );
+};
+
+export default Textarea;
